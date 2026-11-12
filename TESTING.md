@@ -10,6 +10,8 @@ npm audit --omit=dev --audit-level high
 npm test
 ```
 
+Run `npm run check:achievements` to validate the badge catalog, rule descriptors, and all 30 SVG assets. The build and test commands run this check automatically.
+
 ## Real PostgreSQL
 
 Use a disposable migrated database. Set `RLS_TEST_DATABASE_URL` to a login that can set the application and worker roles. Set `TEST_NOTIFICATION_ADMIN_URL` to a login that can create and remove notification fixtures and `TEST_NOTIFICATION_WORKER_URL` to the restricted worker login. Run `npm test` with all three URLs to include the database and live SMTP retry checks. The worker test runs a local SMTP receiver and two competing worker processes. Without these URLs, the relevant tests are skipped.

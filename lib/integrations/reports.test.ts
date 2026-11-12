@@ -123,6 +123,13 @@ test.skipIf(!connectionString)(
         await fixture.query("DELETE FROM report_comments WHERE report_id=$1", [
           report,
         ]);
+        await fixture.query(
+          "DELETE FROM achievement_award_history WHERE award_id IN (SELECT id FROM achievement_awards WHERE user_id=$1)",
+          [owner],
+        );
+        await fixture.query("DELETE FROM achievement_awards WHERE user_id=$1", [
+          owner,
+        ]);
         await fixture.query("DELETE FROM score_events WHERE report_id=$1", [
           report,
         ]);

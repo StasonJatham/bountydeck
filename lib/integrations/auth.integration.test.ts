@@ -1,17 +1,24 @@
 import { createHash, randomBytes } from "node:crypto";
-import { request as requestHttp } from "node:http";
+import { createServer, request as requestHttp } from "node:http";
 import { readFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 import { afterAll, expect, it, vi } from "vitest";
 
-const issuer = "http://bountydeck.test/identity/realms/bountydeck";
-const origin = "http://bountydeck.test";
+const origin =
+  process.env.INTEGRATION_FIXTURE_ORIGIN ?? "http://bountydeck.test";
+const secretDirectory = process.env.INTEGRATION_FIXTURE_SECRETS ?? "secrets";
+const databasePort = process.env.INTEGRATION_FIXTURE_DB_PORT ?? "55432";
+const issuer = `${origin}/identity/realms/bountydeck`;
+const loopback = new URL(origin);
+loopback.hostname = "127.0.0.1";
 const audience = `${origin}/mcp`;
 const callback = "http://127.0.0.1:8765/callback";
+const isCallback = (url: URL) => url.origin + url.pathname === callback;
 const serviceClient = "bountydeck-fixture-service";
 const delegatedClient = "bountydeck-fixture-delegated";
 const fixture = process.env.RUN_INTEGRATION_AUTH_FIXTURE === "1";
-const secret = (name: string) => readFileSync(`secrets/${name}`, "utf8").trim();
+const secret = (name: string) =>
+  readFileSync(`${secretDirectory}/${name}`, "utf8").trim();
 
 afterAll(() => {
   vi.unstubAllEnvs();
@@ -37,7 +44,7 @@ it.skipIf(!fixture)(
     );
     vi.stubEnv(
       "DATABASE_URL",
-      `postgresql://bossob_app:${encodeURIComponent(secret("db_app_password"))}@127.0.0.1:55432/bountydeck`,
+      `postgresql://bossob_app:${encodeURIComponent(secret("db_app_password"))}@127.0.0.1:${databasePort}/bountydeck`,
     );
 
     // Route the fixture hostname to the Compose loopback listener without editing hosts.
@@ -50,7 +57,7 @@ it.skipIf(!fixture)(
         headers.set("Content-Type", "application/x-www-form-urlencoded");
       return new Promise<Response>((resolve, reject) => {
         const call = requestHttp(
-          new URL(url.pathname + url.search, "http://127.0.0.1"),
+          new URL(url.pathname + url.search, loopback),
           {
             method: init?.method,
             headers: Object.fromEntries(headers),
@@ -108,9 +115,16 @@ it.skipIf(!fixture)(
 
     const browser = await chromium.launch({
       channel: process.env.INTEGRATION_CHROME_CHANNEL,
-      args: ["--host-resolver-rules=MAP bountydeck.test 127.0.0.1"],
+      args: [`--host-resolver-rules=MAP ${new URL(origin).hostname} 127.0.0.1`],
+    });
+    const callbackServer = createServer((_request, response) => {
+      response.end("OAuth callback received");
     });
     try {
+      await new Promise<void>((resolve, reject) => {
+        callbackServer.once("error", reject);
+        callbackServer.listen(8765, "127.0.0.1", resolve);
+      });
       const service = await tokens(
         new URLSearchParams({
           grant_type: "client_credentials",
@@ -126,9 +140,6 @@ it.skipIf(!fixture)(
       });
 
       const page = await browser.newPage();
-      await page.route(`${callback}**`, (route) =>
-        route.fulfill({ body: "OAuth callback received" }),
-      );
       const verifier = randomBytes(32).toString("base64url");
       const state = randomBytes(24).toString("base64url");
       const query = new URLSearchParams({
@@ -146,7 +157,7 @@ it.skipIf(!fixture)(
       await page.locator("#username").fill("local-triager");
       await page.locator("#password").fill(secret("test_user_password"));
       await page.locator("#kc-login").click();
-      await page.waitForURL(`${callback}**`);
+      await page.waitForURL(isCallback, { timeout: 8000 });
       const result = new URL(page.url()).searchParams;
       expect(result.get("state")).toBe(state);
       const code = result.get("code");
@@ -205,6 +216,7 @@ it.skipIf(!fixture)(
         ).toBe(401);
       }
     } finally {
+      callbackServer.close();
       await Promise.all([browser.close(), db.$client.end()]);
     }
   },

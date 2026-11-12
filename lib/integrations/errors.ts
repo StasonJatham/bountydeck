@@ -25,6 +25,8 @@ export function integrationFailure(error: unknown): IntegrationError {
   }
   const cause = error instanceof Error && error.cause ? error.cause : error;
   if (cause && typeof cause === "object" && "code" in cause) {
+    if (cause.code === "22023")
+      return new IntegrationError(422, "invalid_input");
     if (cause.code === "42501") return new IntegrationError(404, "not_found");
     if (cause.code === "23503" || cause.code === "23505")
       return new IntegrationError(409, "conflict");

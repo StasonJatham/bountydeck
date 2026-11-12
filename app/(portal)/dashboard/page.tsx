@@ -1,3 +1,8 @@
+import {
+  AchievementNotice,
+  AchievementPreview,
+} from "../../../components/achievement-preview";
+import { getAchievements } from "../../../lib/achievements";
 import { getI18n } from "../../../lib/i18n";
 import { ReportBadge } from "../../../components/report-badge";
 import Link from "next/link";
@@ -12,8 +17,9 @@ import { panel } from "../../../lib/forms";
 export default async function Dashboard() {
   const { t, number } = await getI18n();
   const actor = await requireActor();
-  const [progress, { recent, available }] = await Promise.all([
+  const [progress, { awards }, { recent, available }] = await Promise.all([
     getResearcherProgress(actor),
+    getAchievements(actor),
     withActor(actor, async (tx) => ({
       recent: await tx
         .select({
@@ -71,6 +77,7 @@ export default async function Dashboard() {
       <h1 className="text-3xl font-semibold tracking-tight">
         {t("Dashboard")}
       </h1>
+      <AchievementNotice awards={awards} />
       <div className="grid gap-3 sm:grid-cols-3">
         {metrics.map(({ label, value, Icon, href }) => (
           <Link
@@ -153,25 +160,7 @@ export default async function Dashboard() {
           )}
         </section>
       </div>
-      <section className={panel}>
-        <h2 className="text-lg font-semibold">{t("Achievements")}</h2>
-        {progress.achievements.length > 0 ? (
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {progress.achievements.map((achievement) => (
-              <li
-                className="rounded-full bg-subtle px-3 py-1 text-sm"
-                key={t(achievement)}
-              >
-                {t(achievement)}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-muted">
-            {t("Your first validated finding unlocks an achievement.")}
-          </p>
-        )}
-      </section>
+      <AchievementPreview awards={awards} compact />
     </div>
   );
 }

@@ -8,6 +8,19 @@ import { evidenceResponse, saveEvidence } from "./evidence";
 import { getResearcherProgress } from "../../db/progress";
 import { getLeaderboard } from "../../db/rankings";
 import { IntegrationError } from "./errors";
+import { sql } from "drizzle-orm";
+import { withActor } from "../../db";
+import {
+  finalizeAchievementSeason,
+  getAchievements,
+  reconcileAchievements,
+  verifyReproducibility,
+} from "../achievements";
+import achievementCatalog from "../achievements/catalog.json";
+import {
+  manualAchievementInput,
+  setManualAchievement,
+} from "../manual-achievements";
 
 export type Operation = {
   name: string;
@@ -387,7 +400,19 @@ export const operations = [
       "Read the authenticated researcher's progress, points, and achievements.",
     permission: "Authenticated actor",
     input: empty,
-    run: getResearcherProgress,
+    run: async (actor) => {
+      const [progress, { awards }] = await Promise.all([
+        getResearcherProgress(actor),
+        getAchievements(actor),
+      ]);
+      const ids = new Set(awards.map(({ id }) => id));
+      return {
+        ...progress,
+        achievements: achievementCatalog.badges
+          .filter(({ id }) => ids.has(id))
+          .map(({ name }) => name),
+      };
+    },
   }),
   operation("get_score_history", "GET", "/researcher/scores", {
     summary: "List the current researcher's score ledger entries.",
@@ -405,6 +430,92 @@ export const operations = [
       return { ok: true };
     },
   }),
+  operation("list_achievements", "GET", "/achievements", {
+    summary: "Read the BountyDeck achievement catalog and unlock rules.",
+    permission: "Authenticated actor",
+    input: empty,
+    run: () => achievementCatalog,
+  }),
+  operation("get_my_achievements", "GET", "/achievements/me", {
+    summary:
+      "Read your earned achievements, featured selection, and calculated progress.",
+    permission: "Authenticated actor, own records only",
+    input: empty,
+    run: getAchievements,
+  }),
+  operation(
+    "get_researcher_achievements",
+    "GET",
+    "/researchers/{userId}/achievements",
+    {
+      summary:
+        "Read only featured achievements the researcher has opted to share and you are allowed to see.",
+      permission: "Authenticated actor with source visibility",
+      input: z.object({ userId: uuid }),
+      run: async (actor, { userId }) =>
+        withActor(actor, async (tx) => {
+          const { rows } = await tx.execute<{ id: string; earned_at: Date }>(
+            sql`SELECT id, earned_at FROM app_shared_achievements(${userId})`,
+          );
+          return {
+            items: rows.map(({ id, earned_at }) => ({
+              id,
+              earnedAt: earned_at,
+            })),
+          };
+        }),
+    },
+  ),
+  operation(
+    "set_manual_achievement",
+    "POST",
+    "/reports/{reportId}/achievements",
+    {
+      summary:
+        "Grant or revoke a manual achievement for a validated report's researcher. Include an audit reason.",
+      permission: manager,
+      input: manualAchievementInput.merge(reportId),
+      run: (actor, { reportId, ...data }) =>
+        setManualAchievement(actor, reportId, data),
+    },
+  ),
+  operation(
+    "verify_reproducibility",
+    "POST",
+    "/reports/{reportId}/reproducibility",
+    {
+      summary:
+        "Record or withdraw a reviewer's explicit confirmation of reproducibility.",
+      permission: reviewer,
+      input: reportId.extend({ verified: z.boolean() }),
+      run: async (actor, { reportId, verified }) => ({
+        changed: await verifyReproducibility(actor, reportId, verified),
+      }),
+    },
+  ),
+  operation("reconcile_achievements", "POST", "/achievements/reconcile", {
+    summary: "Reconcile existing researchers' calculated achievements.",
+    permission: "Platform administrator",
+    input: empty,
+    run: async (actor) => ({ changed: await reconcileAchievements(actor) }),
+  }),
+  operation(
+    "finalize_achievement_season",
+    "POST",
+    "/achievements/seasons/finalize",
+    {
+      summary:
+        "Finalize a completed UTC quarter or year and record its ranking awards.",
+      permission: "Platform administrator",
+      input: z.object({
+        period: z.enum(["quarter", "year"]),
+        startsOn: z.iso.date(),
+      }),
+      run: async (actor, { period, startsOn }) => ({
+        changed: await finalizeAchievementSeason(actor, period, startsOn),
+      }),
+    },
+  ),
   operation("get_leaderboard", "GET", "/leaderboard", {
     summary: "Read visible rankings by scope and season.",
     permission: lookup,

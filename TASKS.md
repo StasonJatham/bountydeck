@@ -12,3 +12,6 @@
 | OPS       | P0       | All                     | Clean isolated installation applied eight migrations. Restore recovered application and Keycloak data, forced report RLS, and matching evidence bytes. Retention and the dependency audit passed.    | DONE  |          |
 | BRAND     | P1       | UX                      | Integrate BountyDeck assets and self-hosted Geist. Verified desktop and mobile navigation, organization filtering, theme persistence, role visibility, and six browser workflows.                    | DONE  |          |
 | INTEGRATE | P1       | IAM, RPT                | Share domain operations across OAuth-protected REST and MCP. Verify generated OpenAPI, service provisioning, delegated PKCE, tenant isolation, idempotency, triage effects, and browser regressions. | DONE  |          |
+| ACH-DATA  | P1 | SCORE | Import and validate all 30 badges and their SVGs. Reconcile historical and corrected report and score data, verify reproduction, and snapshot finalized rankings. | DONE | |
+| ACH-UI    | P1 | ACH-DATA | Ship the private gallery, profile and dashboard badges, featuring and unlock notifications. Verify desktop, mobile and keyboard interaction. | DONE | |
+| ACH-API   | P1 | ACH-DATA | Share authorization and award operations across UI, REST and MCP. Document and test manual recognition, revocation and privacy. | DONE | |

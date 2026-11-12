@@ -5,16 +5,18 @@ import { expect, test } from "vitest";
 const connectionString = process.env.RLS_TEST_DATABASE_URL;
 
 test.skipIf(!connectionString)(
-  "concurrent validation can only produce one award",
+  "concurrent validation deduplicates a report and recognizes a threshold across distinct reports",
   async () => {
     const fixture = new Client({ connectionString });
     const [researcher, triager, org, program, scope, report] = Array.from(
       { length: 6 },
       () => randomUUID(),
     );
+    const extraReports = Array.from({ length: 4 }, () => randomUUID());
+    const allReports = [report, ...extraReports];
     await fixture.connect();
 
-    async function validate() {
+    async function validate(target = report) {
       const client = new Client({ connectionString });
       await client.connect();
       try {
@@ -25,12 +27,12 @@ test.skipIf(!connectionString)(
         ]);
         await client.query(
           "UPDATE reports SET status='validated', severity='medium' WHERE id=$1",
-          [report],
+          [target],
         );
         const result = await client.query(
           `INSERT INTO score_events (report_id,program_id,user_id,actor_id,kind,points,reason)
          VALUES ($1,$2,$3,$4,'award',200,'Validated') ON CONFLICT DO NOTHING RETURNING id`,
-          [report, program, researcher, triager],
+          [target, program, researcher, triager],
         );
         await client.query("COMMIT");
         return result.rowCount;
@@ -80,14 +82,50 @@ test.skipIf(!connectionString)(
         [report],
       );
       expect(rows).toEqual([{ points: 200, award_severity: "medium" }]);
+      const achievements = await fixture.query(
+        "SELECT badge_id FROM achievement_awards WHERE user_id=$1",
+        [researcher],
+      );
+      expect(achievements.rows).toEqual([{ badge_id: "first-signal" }]);
+
+      await fixture.query(
+        `INSERT INTO reports (id,program_id,reporter_id,asset_id,title,description,cwe,steps,impact,proposed_severity,status)
+          SELECT id,$2,$3,$4,'Fixture','Fixture','CWE-200','Fixture','Fixture','medium','triage'
+          FROM unnest($1::uuid[]) reports(id)`,
+        [extraReports, program, researcher, scope],
+      );
+      await validate(extraReports[0]);
+      await validate(extraReports[1]);
+      expect(
+        await Promise.all([
+          validate(extraReports[2]),
+          validate(extraReports[3]),
+        ]),
+      ).toEqual([1, 1]);
+      const { rows: threshold } = await fixture.query(
+        `SELECT count(*)::int AS awards FROM achievement_awards
+          WHERE user_id=$1 AND badge_id='steady-hand' AND revoked_at IS NULL`,
+        [researcher],
+      );
+      expect(threshold).toEqual([{ awards: 1 }]);
     } finally {
       try {
         await fixture.query("ROLLBACK");
         await fixture.query("BEGIN");
-        await fixture.query("DELETE FROM score_events WHERE report_id=$1", [
-          report,
+        await fixture.query(
+          "DELETE FROM achievement_award_history WHERE award_id IN (SELECT id FROM achievement_awards WHERE user_id=$1)",
+          [researcher],
+        );
+        await fixture.query("DELETE FROM achievement_awards WHERE user_id=$1", [
+          researcher,
         ]);
-        await fixture.query("DELETE FROM reports WHERE id=$1", [report]);
+        await fixture.query(
+          "DELETE FROM score_events WHERE report_id=ANY($1)",
+          [allReports],
+        );
+        await fixture.query("DELETE FROM reports WHERE id=ANY($1)", [
+          allReports,
+        ]);
         await fixture.query(
           "DELETE FROM program_memberships WHERE program_id=$1",
           [program],

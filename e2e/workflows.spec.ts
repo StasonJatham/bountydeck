@@ -103,6 +103,10 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
     .fill("CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H");
   await changeStatus(triager, "validated", "high");
   await expect(triager.getByText(/CVSS 10\.0/)).toBeVisible();
+  await triager.getByLabel("Reproducibility").selectOption("true");
+  await triager.getByRole("button", { name: "Save reproducibility" }).click();
+  await expect(triager.getByLabel("Reproducibility")).toHaveValue("true");
+  await expect(triager.getByText("Achievement change saved.")).toBeVisible();
   await expect(
     triager
       .getByRole("heading", { name: "Points history" })
@@ -131,6 +135,34 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   expect(exported).not.toContain("Confidential triage note");
   await researcher.goto("/profile");
   await expect(researcher.getByText("Report validated").first()).toBeVisible();
+  const profileBadges = researcher
+    .getByRole("heading", { name: "Achievements" })
+    .locator("..")
+    .locator("..");
+  await expect(
+    profileBadges.getByText("First Signal", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    profileBadges.getByText("Repro Ready", { exact: true }),
+  ).toBeVisible();
+  await researcher
+    .getByRole("button", { name: "Dismiss", exact: true })
+    .click();
+  await expect(researcher.locator('[data-slot="toast"]')).toHaveCount(0);
+  await researcher.goto("/achievements");
+  const featured = researcher.getByRole("group", {
+    name: "Choose up to three earned badges to feature on your profile.",
+  });
+  await featured.getByRole("checkbox", { name: "First Signal" }).check();
+  await researcher
+    .getByRole("button", { name: "Save featured badges" })
+    .click();
+  await expect(researcher.getByText("Featured badges saved.")).toBeVisible();
+  await researcher.goto("/profile");
+  const firstSignal = profileBadges
+    .getByText("First Signal", { exact: true })
+    .locator("..");
+  await expect(firstSignal.getByText("Featured badge")).toBeVisible();
 
   const outsider = await login(browser, baseURL, "local-outsider");
   expect((await outsider.goto(report))?.status()).toBe(404);
@@ -571,4 +603,50 @@ test("responsive navigation is keyboard accessible and role-aware", async ({
   ).toBe(390);
 
   await Promise.all([reviewer.close(), researcher.close()]);
+});
+
+test("achievement collection supports filters, keyboard dialogs, and narrow screens", async ({
+  browser,
+  baseURL,
+}, info) => {
+  for (const mobile of [true, false]) {
+    const page = await login(browser, baseURL, "local-researcher", mobile);
+    await page.emulateMedia({
+      colorScheme: mobile ? "dark" : "light",
+      reducedMotion: "reduce",
+    });
+    await page.goto("/achievements");
+    const collection = page.getByRole("list", { name: "Badge collection" });
+    await expect(collection.getByRole("listitem")).toHaveCount(30);
+    await page.screenshot({
+      path: info.outputPath(
+        mobile
+          ? "achievements-dark-mobile.png"
+          : "achievements-light-desktop.png",
+      ),
+    });
+    const badge = collection.getByRole("listitem").filter({
+      has: page.getByRole("heading", { name: "First Signal", exact: true }),
+    });
+    await expect(badge.locator("img").first()).toHaveAttribute("width", "64");
+    const details = badge.getByRole("button", {
+      name: "Details for First Signal",
+    });
+    await details.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog", { name: "First Signal" });
+    await expect(dialog.getByText("Unlock criteria")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(details).toBeFocused();
+    await page
+      .getByRole("combobox", { name: "Category", exact: true })
+      .selectOption("Craft");
+    await page.getByRole("button", { name: "Apply" }).click();
+    await expect(collection.getByRole("listitem")).toHaveCount(4);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBe(mobile ? 390 : 1440);
+    await page.close();
+  }
 });

@@ -137,3 +137,13 @@ KEYCLOAK_BOOTSTRAP_USER=bossob-bootstrap
 If you used a different project or database name, substitute the values from your installation. Rename the optional `BOSSOB_IMAGE` override to `BOUNTYDECK_IMAGE`. For database backups and restores, use your configured database name. The named attachment volume mounts at `/var/lib/bountydeck/attachments`.
 
 Existing PostgreSQL role names are retained for migration compatibility. Webhooks send the documented `X-BountyDeck-*` headers and the previous header names so existing receivers can migrate at their own pace.
+
+## Researcher achievements
+
+The achievement migration reconciles existing validated reports and points. To rerun reconciliation after importing historical data, pass the user ID of an existing platform administrator.
+
+```sh
+docker compose run --rm --no-deps application node db/reconcile-achievements.ts <platform-admin-uuid>
+```
+
+Platform administrators can finalize completed UTC quarters and years through **Administration**. Finalization stores the standings and grants any earned competitive badges. Equal point totals share a rank. Later corrections do not change a finalized season.

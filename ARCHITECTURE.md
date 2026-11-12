@@ -13,3 +13,11 @@ PostgreSQL triggers enqueue minimized notification records in the same transacti
 ## External integrations
 
 REST and MCP accept OAuth access tokens and resolve the issuer and subject to an existing actor. Both transports use the same operation registry and actor-scoped transactions as the browser. The registry provides input validation and OpenAPI generation. Token credentials, report text, and evidence bytes stay out of integration audit entries.
+
+## Achievement collection
+
+The versioned catalog defines badge IDs, artwork, and award rules. Report and score changes reconcile calculated awards inside the same PostgreSQL transaction. Reopening a report for triage removes it from validated finding counts and clears its reproduction verification. Score corrections affect point thresholds through the ledger. Reconciliation records award and revocation events without granting points.
+
+Manual recognition records the manager, report, and reason in the existing audit log. Competitive awards use immutable snapshots of completed UTC quarters and years. Finalization uses visible global leaderboard contributions and gives equal totals the same rank. Each badge can be earned once per applicable season.
+
+The gallery, profile, and dashboard show the signed-in researcher's own collection. Shared profile reads require opt-in and return only featured badges that the viewer is authorized to see. Award provenance stays in the audit history.

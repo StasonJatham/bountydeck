@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BountyDeck Achievements Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "catalog_version",
+    "branding",
+    "badges"
+  ],
+  "properties": {
+    "catalog_version": {
+      "const": 1
+    },
+    "branding": {
+      "const": "BountyDeck"
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "badges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "description",
+          "category",
+          "tier",
+          "icon",
+          "asset",
+          "rule",
+          "repeatable",
+          "requires_opt_in_to_publish"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "enum": [
+              "Discovery",
+              "Impact",
+              "Points",
+              "Exploration",
+              "Craft",
+              "Consistency",
+              "Competition"
+            ]
+          },
+          "tier": {
+            "enum": [
+              "starter",
+              "bronze",
+              "silver",
+              "gold",
+              "legendary"
+            ]
+          },
+          "icon": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string",
+            "pattern": "^svg/[a-z0-9-]+\\.svg$"
+          },
+          "rule": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "threshold": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "period": {
+                "enum": [
+                  "quarter",
+                  "year"
+                ]
+              },
+              "max_rank": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "repeatable": {
+            "type": "boolean"
+          },
+          "requires_opt_in_to_publish": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

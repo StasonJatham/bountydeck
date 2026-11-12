@@ -24,11 +24,9 @@ export async function getResearcherProgress(actor: string) {
     } = await tx.execute<{
       points: string;
       validated: number;
-      critical: boolean;
     }>(sql`
       SELECT coalesce(sum(points), 0) AS points,
-        count(*) FILTER (WHERE kind = 'award')::int AS validated,
-        coalesce(bool_or(award_severity = 'critical'), false) AS critical
+        count(*) FILTER (WHERE kind = 'award')::int AS validated
       FROM score_events WHERE user_id = ${actor}
     `);
 
@@ -58,28 +56,11 @@ export async function getResearcherProgress(actor: string) {
       ends_at: new Date(row.ends_at),
     }));
 
-    const { rows: milestones } = await tx.execute<{ name: string }>(sql`
-      SELECT name FROM achievements
-      WHERE minimum_validated <= ${summary.validated}
-      ORDER BY minimum_validated, name
-    `);
-    const achievements = milestones.map(({ name }) => name);
-    if (summary.critical) achievements.push("First critical finding");
-    if (BigInt(summary.points) >= 1000n)
-      achievements.push("One thousand points");
-    if (
-      seasons.some(
-        ({ standing, ends_at }) => standing === "1" && ends_at <= new Date(),
-      )
-    ) {
-      achievements.push("First place in a season");
-    }
     return {
       points: summary.points,
       validated: summary.validated,
       programs,
       seasons,
-      achievements,
     };
   });
 }

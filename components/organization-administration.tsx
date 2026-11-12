@@ -1,3 +1,4 @@
+import { AchievementAdministration } from "./achievement-review";
 import { getI18n } from "../lib/i18n";
 import { Button } from "./ui/button";
 import { desc, eq, sql } from "drizzle-orm";
@@ -24,7 +25,7 @@ export async function OrganizationAdministration({
   searchParams,
   platformOnly,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; achievement?: string }>;
   platformOnly: boolean;
 }) {
   const { t, date } = await getI18n();
@@ -72,6 +73,7 @@ export async function OrganizationAdministration({
         settings,
       };
     });
+  const { error, achievement } = await searchParams;
   const returnTo = platformOnly ? "/admin" : "/organizations";
   const managed = organizations.filter(({ admin }) => admin);
   return (
@@ -79,12 +81,13 @@ export async function OrganizationAdministration({
       <h1 className="text-3xl font-semibold tracking-tight">
         {t(platformOnly ? "Administration" : "Organization management")}
       </h1>
-      {(await searchParams).error && (
+      {error && (
         <p role="alert" className="mt-4 text-danger">
           {t("Check the details and choose a unique slug.")}
         </p>
       )}
       <div className="mt-6 grid items-start gap-4 md:grid-cols-2">
+        {platform && <AchievementAdministration result={achievement} />}
         {platform && (
           <form className={`${panel} grid gap-3`} action={createOrganization}>
             <h2 className="font-semibold">{t("Create organization")}</h2>

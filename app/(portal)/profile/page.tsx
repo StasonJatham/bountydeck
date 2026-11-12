@@ -1,3 +1,8 @@
+import {
+  AchievementNotice,
+  AchievementPreview,
+} from "../../../components/achievement-preview";
+import { getAchievements } from "../../../lib/achievements";
 import Image from "next/image";
 import { UserRound } from "lucide-react";
 import { getI18n } from "../../../lib/i18n";
@@ -42,36 +47,20 @@ export default async function Profile({
       return { profile, ledger, avatarVersion: avatar?.updatedAt.getTime() };
     },
   );
-  const progress = await getResearcherProgress(actor);
+  const [progress, { awards }] = await Promise.all([
+    getResearcherProgress(actor),
+    getAchievements(actor),
+  ]);
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">
         {t("Researcher profile")}
       </h1>
+      <div className="mt-4">
+        <AchievementNotice awards={awards} />
+      </div>
       <div className="mt-6 grid items-start gap-4 md:grid-cols-2">
-        <section className={panel}>
-          <h2 className="font-semibold">{t("Achievements")}</h2>
-          <p className="mt-2 text-sm">
-            {number(progress.points)} {t("points ·")}{" "}
-            {number(progress.validated)} {t("validated findings")}
-          </p>
-          {progress.achievements.length > 0 ? (
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {progress.achievements.map((achievement) => (
-                <li
-                  className="rounded-full bg-subtle px-3 py-1 text-sm"
-                  key={t(achievement)}
-                >
-                  {t(achievement)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-sm text-muted">
-              {t("No achievements earned yet.")}
-            </p>
-          )}
-        </section>
+        <AchievementPreview awards={awards} />
         <section className={panel}>
           <h2 className="font-semibold">{t("Program recognition")}</h2>
           <ul className="mt-2 space-y-3 text-sm">

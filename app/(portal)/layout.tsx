@@ -54,6 +54,7 @@ export default async function Portal({ children }: { children: ReactNode }) {
     { icon: "dashboard", href: "/dashboard", label: t("Dashboard") },
     { icon: "programs", href: "/programs", label: t("Programs") },
     { icon: "reports", href: "/reports", label: t("My reports") },
+    { icon: "achievements", href: "/achievements", label: t("Achievements") },
     { icon: "leaderboard", href: "/leaderboard", label: t("Leaderboard") },
     { icon: "profile", href: "/profile", label: t("Researcher profile") },
   ];

@@ -32,6 +32,123 @@ export const german: Record<string, string> = {
   "Skip to content": "Zum Inhalt springen",
   " · Eligible": " · Teilnahmeberechtigt",
   Achievements: "Erfolge",
+  "Q{quarter} {year}": "{quarter}. Quartal {year}",
+  "report.reproducibility_changed": "Reproduzierbarkeit geändert",
+  "achievements.reconciled": "Erfolge abgeglichen",
+  "achievements.season_finalized": "Saison abgeschlossen",
+  Discovery: "Entdeckung",
+  Exploration: "Erkundung",
+  Craft: "Handwerk",
+  Consistency: "Beständigkeit",
+  Competition: "Wettbewerb",
+  starter: "Einstieg",
+  bronze: "Bronze",
+  silver: "Silber",
+  gold: "Gold",
+  legendary: "Legendär",
+  "View collection": "Sammlung ansehen",
+  "Featured badge": "Hervorgehobenes Abzeichen",
+  "Achievement unlocked": "Erfolg freigeschaltet",
+  "{count} achievements unlocked": "{count} Erfolge freigeschaltet",
+  Dismiss: "Schließen",
+  "{earned} of {total} badges earned":
+    "{earned} von {total} Abzeichen verdient",
+  Category: "Kategorie",
+  "All categories": "Alle Kategorien",
+  "All badges": "Alle Abzeichen",
+  Earned: "Verdient",
+  Locked: "Gesperrt",
+  "Badge collection": "Abzeichensammlung",
+  "Progress toward {badge}": "Fortschritt für {badge}",
+  Details: "Details",
+  "Details for {badge}": "Details zu {badge}",
+  Close: "Schließen",
+  Tier: "Stufe",
+  "Unlock criteria": "Freischaltkriterien",
+  "Earned on": "Verdient am",
+  "No badges match these filters.":
+    "Keine Abzeichen entsprechen diesen Filtern.",
+  "Featured badges": "Hervorgehobene Abzeichen",
+  "Choose up to three earned badges to feature on your profile.":
+    "Wähle bis zu drei verdiente Abzeichen für dein Profil.",
+  "Select up to three badges you have earned.":
+    "Wähle bis zu drei Abzeichen, die du verdient hast.",
+  "Featured badges saved.": "Hervorgehobene Abzeichen gespeichert.",
+  "Save featured badges": "Hervorgehobene Abzeichen speichern",
+  "A program manager must grant this recognition.":
+    "Die Programmleitung muss diese Auszeichnung verleihen.",
+  "Finish at rank {rank} or higher in a finalized quarterly season.":
+    "Erreiche in einer abgeschlossenen Quartalswertung Platz {rank} oder besser.",
+  "Finish at rank {rank} or higher in a finalized annual season.":
+    "Erreiche in einer abgeschlossenen Jahreswertung Platz {rank} oder besser.",
+  "Researcher recognition": "Auszeichnungen für Forschende",
+  Reproducibility: "Reproduzierbarkeit",
+  Unverified: "Unbestätigt",
+  "Verified by triage": "Durch das Prüfteam bestätigt",
+  "Save reproducibility": "Reproduzierbarkeit speichern",
+  "Award to grant": "Zu verleihende Auszeichnung",
+  "Award to revoke": "Zu widerrufende Auszeichnung",
+  "Grant recognition": "Auszeichnung verleihen",
+  "Revoke recognition": "Auszeichnung widerrufen",
+  "Achievement administration": "Erfolgsverwaltung",
+  "Finalize season rankings": "Saisonwertung abschließen",
+  "Season period": "Saisonzeitraum",
+  "First day of the season (UTC)": "Erster Tag der Saison (UTC)",
+  "Finalize season": "Saison abschließen",
+  "Recheck lifetime badges against historical reports and scores.":
+    "Gleiche Abzeichen mit bisherigen Meldungen und Punkten ab.",
+  "Reconcile achievements": "Erfolge abgleichen",
+  "The achievement change could not be saved. Check the details and try again.":
+    "Die Änderung konnte nicht gespeichert werden. Prüfe die Angaben und versuche es erneut.",
+  "Achievement change saved.": "Änderung gespeichert.",
+  "Your first validated vulnerability.":
+    "Deine erste bestätigte Schwachstelle.",
+  "Five validated findings.": "Fünf bestätigte Funde.",
+  "Ten validated findings.": "Zehn bestätigte Funde.",
+  "Twenty-five validated findings.": "25 bestätigte Funde.",
+  "Fifty validated findings.": "50 bestätigte Funde.",
+  "Validate your first High or Critical finding.":
+    "Lass deinen ersten Fund mit hohem oder kritischem Schweregrad bestätigen.",
+  "Validate your first Critical finding.":
+    "Lass deinen ersten kritischen Fund bestätigen.",
+  "Validate three Critical findings.": "Lass drei kritische Funde bestätigen.",
+  "Ten validated High or Critical findings.":
+    "Zehn bestätigte Funde mit hohem oder kritischem Schweregrad.",
+  "Validated findings across three severity bands.":
+    "Bestätigte Funde in drei Schweregraden.",
+  "Earn 250 points.": "Verdiene 250 Punkte.",
+  "Earn 1,000 points.": "Verdiene 1.000 Punkte.",
+  "Earn 2,500 points.": "Verdiene 2.500 Punkte.",
+  "Earn 5,000 points.": "Verdiene 5.000 Punkte.",
+  "Earn 10,000 points.": "Verdiene 10.000 Punkte.",
+  "Find validated vulnerabilities in two programs.":
+    "Finde bestätigte Schwachstellen in zwei Programmen.",
+  "Find validated vulnerabilities in five programs.":
+    "Finde bestätigte Schwachstellen in fünf Programmen.",
+  "Contribute validated findings to two organizational units.":
+    "Trage bestätigte Funde zu zwei Organisationseinheiten bei.",
+  "Find three distinct CWE types.": "Finde drei unterschiedliche CWE-Typen.",
+  "Find five distinct CWE types.": "Finde fünf unterschiedliche CWE-Typen.",
+  "Submit one finding with reproducibility confirmed by a triager.":
+    "Reiche einen Fund ein, dessen Reproduzierbarkeit das Prüfteam bestätigt.",
+  "Five findings with reproducibility confirmed by triagers.":
+    "Fünf Funde mit vom Prüfteam bestätigter Reproduzierbarkeit.",
+  "Recognized for exceptionally clear vulnerability reporting.":
+    "Auszeichnung für besonders klare Schwachstellenberichte.",
+  "Recognized for meaningful collaboration.":
+    "Auszeichnung für wertvolle Zusammenarbeit.",
+  "Validated findings in two different calendar months.":
+    "Bestätigte Funde in zwei verschiedenen Kalendermonaten.",
+  "Validated findings in three different calendar months.":
+    "Bestätigte Funde in drei verschiedenen Kalendermonaten.",
+  "Validated findings in two different seasons.":
+    "Bestätigte Funde in zwei verschiedenen Saisons.",
+  "Finish a quarterly season in the top three.":
+    "Beende eine Quartalssaison unter den ersten drei.",
+  "Finish a quarterly season in first place.":
+    "Beende eine Quartalssaison auf Platz eins.",
+  "Finish an annual season in first place.":
+    "Beende eine Jahressaison auf Platz eins.",
   "Add a comment": "Kommentar hinzufügen",
   "Add asset": "Asset hinzufügen",
   "Add channel": "Kanal hinzufügen",

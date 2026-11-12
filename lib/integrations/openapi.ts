@@ -47,7 +47,50 @@ const attachment = z
     size: count,
   })
   .passthrough();
+const achievementId = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+const sharedAchievement = z.object({ id: achievementId, earnedAt: date });
 const outputs: Record<string, z.ZodType> = {
+  list_achievements: z.object({
+    catalog_version: count,
+    branding: z.literal("BountyDeck"),
+    schema_version: z.string(),
+    notes: z.string(),
+    badges: z.array(
+      z.object({
+        id: achievementId,
+        name: z.string(),
+        description: z.string(),
+        category: z.string(),
+        tier: z.enum(["starter", "bronze", "silver", "gold", "legendary"]),
+        icon: z.string(),
+        asset: z.string(),
+        rule: z.object({
+          type: z.string(),
+          threshold: count.optional(),
+          period: z.enum(["quarter", "year"]).optional(),
+          max_rank: count.optional(),
+        }),
+        repeatable: z.boolean(),
+        requires_opt_in_to_publish: z.boolean(),
+      }),
+    ),
+  }),
+  get_my_achievements: z.object({
+    progress: z.record(z.string(), count),
+    awards: z.array(
+      sharedAchievement.extend({
+        awardId: uuid,
+        season: z.string().nullable(),
+        featured: z.boolean(),
+        seen: z.boolean(),
+      }),
+    ),
+  }),
+  get_researcher_achievements: z.object({ items: z.array(sharedAchievement) }),
+  verify_reproducibility: z.object({ changed: z.boolean() }),
+  reconcile_achievements: z.object({ changed: count }),
+  finalize_achievement_season: z.object({ changed: z.boolean() }),
+
   get_identity: z.object({
     id: uuid,
     name: z.string().nullable(),

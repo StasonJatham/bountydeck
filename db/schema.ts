@@ -177,6 +177,7 @@ export const reports = pgTable("reports", {
     enum: ["none", "low", "medium", "high", "critical"],
   }),
   contentRedactedAt: date("content_redacted_at"),
+  reproVerified: boolean("repro_verified").notNull().default(false),
   cvssVector: text("cvss_vector"),
   cvssScore: real("cvss_score"),
   assigneeId: uuid("assignee_id").references(() => users.id),

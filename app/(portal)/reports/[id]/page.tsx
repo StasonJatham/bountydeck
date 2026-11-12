@@ -1,3 +1,5 @@
+import { AchievementReview } from "../../../../components/achievement-review";
+import { getManualAchievements } from "../../../../lib/manual-achievements";
 import { guestReporterId } from "../../../../lib/guest-reports";
 import { ReportBadge } from "../../../../components/report-badge";
 import { getI18n } from "../../../../lib/i18n";
@@ -33,7 +35,7 @@ export default async function Report({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; achievement?: string }>;
 }) {
   const { t, date, number, decimal } = await getI18n();
   const actor = await requireActor();
@@ -118,7 +120,14 @@ export default async function Report({
       </>
     );
   }
-  const error = (await searchParams).error;
+  const { error, achievement } = await searchParams;
+  const manualAwards = manager ? await getManualAchievements(actor, id) : [];
+  const canRecognize =
+    report.reporterId !== guestReporterId &&
+    report.reporterId !== actor &&
+    ["validated", "remediation", "retesting", "resolved"].includes(
+      report.status,
+    );
   const options = transitions[report.status];
   return (
     <>
@@ -310,6 +319,16 @@ export default async function Report({
               </Field>
               <Button>{t("Save assignment")}</Button>
             </form>
+          )}
+          {reviewer && (
+            <AchievementReview
+              reportId={id}
+              reproVerified={report.reproVerified}
+              canVerify={canRecognize}
+              canGrant={manager && canRecognize}
+              manualAwards={manualAwards}
+              result={achievement}
+            />
           )}
           {awards.length > 0 && (
             <section className={panel}>

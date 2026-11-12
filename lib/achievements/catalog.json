@@ -1,0 +1,459 @@
+{
+  "catalog_version": 1,
+  "branding": "BountyDeck",
+  "schema_version": "1.0.0",
+  "notes": "Award conditions are implementation contracts. Do not trust any client-supplied achievement or score data. Seasonal awards are granted only after finalized rankings.",
+  "badges": [
+    {
+      "id": "first-signal",
+      "name": "First Signal",
+      "description": "Your first validated vulnerability.",
+      "category": "Discovery",
+      "tier": "starter",
+      "icon": "signal",
+      "asset": "svg/first-signal.svg",
+      "rule": {
+        "type": "validated_reports",
+        "threshold": 1
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "steady-hand",
+      "name": "Steady Hand",
+      "description": "Five validated findings.",
+      "category": "Discovery",
+      "tier": "bronze",
+      "icon": "hand",
+      "asset": "svg/steady-hand.svg",
+      "rule": {
+        "type": "validated_reports",
+        "threshold": 5
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "bug-hunter",
+      "name": "Bug Hunter",
+      "description": "Ten validated findings.",
+      "category": "Discovery",
+      "tier": "silver",
+      "icon": "bug",
+      "asset": "svg/bug-hunter.svg",
+      "rule": {
+        "type": "validated_reports",
+        "threshold": 10
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "bug-veteran",
+      "name": "Bug Veteran",
+      "description": "Twenty-five validated findings.",
+      "category": "Discovery",
+      "tier": "gold",
+      "icon": "shield",
+      "asset": "svg/bug-veteran.svg",
+      "rule": {
+        "type": "validated_reports",
+        "threshold": 25
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "bug-legend",
+      "name": "Bug Legend",
+      "description": "Fifty validated findings.",
+      "category": "Discovery",
+      "tier": "legendary",
+      "icon": "crown",
+      "asset": "svg/bug-legend.svg",
+      "rule": {
+        "type": "validated_reports",
+        "threshold": 50
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "high-voltage",
+      "name": "High Voltage",
+      "description": "Validate your first High or Critical finding.",
+      "category": "Impact",
+      "tier": "bronze",
+      "icon": "bolt",
+      "asset": "svg/high-voltage.svg",
+      "rule": {
+        "type": "validated_reports_min_severity",
+        "threshold": 1
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "critical-hit",
+      "name": "Critical Hit",
+      "description": "Validate your first Critical finding.",
+      "category": "Impact",
+      "tier": "gold",
+      "icon": "crosshair",
+      "asset": "svg/critical-hit.svg",
+      "rule": {
+        "type": "validated_reports_exact_severity_critical",
+        "threshold": 1
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "critical-mass",
+      "name": "Critical Mass",
+      "description": "Validate three Critical findings.",
+      "category": "Impact",
+      "tier": "legendary",
+      "icon": "flame",
+      "asset": "svg/critical-mass.svg",
+      "rule": {
+        "type": "validated_reports_exact_severity_critical",
+        "threshold": 3
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "impact-maker",
+      "name": "Impact Maker",
+      "description": "Ten validated High or Critical findings.",
+      "category": "Impact",
+      "tier": "gold",
+      "icon": "hammer",
+      "asset": "svg/impact-maker.svg",
+      "rule": {
+        "type": "validated_reports_min_severity",
+        "threshold": 10
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "full-spectrum",
+      "name": "Full Spectrum",
+      "description": "Validated findings across three severity bands.",
+      "category": "Impact",
+      "tier": "silver",
+      "icon": "prism",
+      "asset": "svg/full-spectrum.svg",
+      "rule": {
+        "type": "distinct_validated_severity_bands",
+        "threshold": 3
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "spark-250",
+      "name": "Spark",
+      "description": "Earn 250 points.",
+      "category": "Points",
+      "tier": "starter",
+      "icon": "spark",
+      "asset": "svg/spark-250.svg",
+      "rule": {
+        "type": "lifetime_points",
+        "threshold": 250
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "one-k-club",
+      "name": "1K Club",
+      "description": "Earn 1,000 points.",
+      "category": "Points",
+      "tier": "bronze",
+      "icon": "gem",
+      "asset": "svg/one-k-club.svg",
+      "rule": {
+        "type": "lifetime_points",
+        "threshold": 1000
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "momentum",
+      "name": "Momentum",
+      "description": "Earn 2,500 points.",
+      "category": "Points",
+      "tier": "silver",
+      "icon": "rocket",
+      "asset": "svg/momentum.svg",
+      "rule": {
+        "type": "lifetime_points",
+        "threshold": 2500
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "five-k-club",
+      "name": "5K Club",
+      "description": "Earn 5,000 points.",
+      "category": "Points",
+      "tier": "gold",
+      "icon": "star",
+      "asset": "svg/five-k-club.svg",
+      "rule": {
+        "type": "lifetime_points",
+        "threshold": 5000
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "orbit",
+      "name": "Orbit",
+      "description": "Earn 10,000 points.",
+      "category": "Points",
+      "tier": "legendary",
+      "icon": "orbit",
+      "asset": "svg/orbit.svg",
+      "rule": {
+        "type": "lifetime_points",
+        "threshold": 10000
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "pathfinder",
+      "name": "Pathfinder",
+      "description": "Find validated vulnerabilities in two programs.",
+      "category": "Exploration",
+      "tier": "bronze",
+      "icon": "compass",
+      "asset": "svg/pathfinder.svg",
+      "rule": {
+        "type": "distinct_programs_with_validated_reports",
+        "threshold": 2
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "explorer",
+      "name": "Explorer",
+      "description": "Find validated vulnerabilities in five programs.",
+      "category": "Exploration",
+      "tier": "silver",
+      "icon": "map",
+      "asset": "svg/explorer.svg",
+      "rule": {
+        "type": "distinct_programs_with_validated_reports",
+        "threshold": 5
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "bridge-builder",
+      "name": "Bridge Builder",
+      "description": "Contribute validated findings to two organizational units.",
+      "category": "Exploration",
+      "tier": "gold",
+      "icon": "bridge",
+      "asset": "svg/bridge-builder.svg",
+      "rule": {
+        "type": "distinct_org_units_with_validated_reports",
+        "threshold": 2
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "pattern-reader",
+      "name": "Pattern Reader",
+      "description": "Find three distinct CWE types.",
+      "category": "Exploration",
+      "tier": "silver",
+      "icon": "nodes",
+      "asset": "svg/pattern-reader.svg",
+      "rule": {
+        "type": "distinct_cwe_in_validated_reports",
+        "threshold": 3
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "deep-diver",
+      "name": "Deep Diver",
+      "description": "Find five distinct CWE types.",
+      "category": "Exploration",
+      "tier": "gold",
+      "icon": "eye",
+      "asset": "svg/deep-diver.svg",
+      "rule": {
+        "type": "distinct_cwe_in_validated_reports",
+        "threshold": 5
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "repro-ready",
+      "name": "Repro Ready",
+      "description": "Submit one finding with reproducibility confirmed by a triager.",
+      "category": "Craft",
+      "tier": "bronze",
+      "icon": "checklist",
+      "asset": "svg/repro-ready.svg",
+      "rule": {
+        "type": "triager_verified_repro_count",
+        "threshold": 1
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "repro-pro",
+      "name": "Repro Pro",
+      "description": "Five findings with reproducibility confirmed by triagers.",
+      "category": "Craft",
+      "tier": "gold",
+      "icon": "microscope",
+      "asset": "svg/repro-pro.svg",
+      "rule": {
+        "type": "triager_verified_repro_count",
+        "threshold": 5
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "clear-signal",
+      "name": "Clear Signal",
+      "description": "Recognized for exceptionally clear vulnerability reporting.",
+      "category": "Craft",
+      "tier": "silver",
+      "icon": "sun",
+      "asset": "svg/clear-signal.svg",
+      "rule": {
+        "type": "manual_award"
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "team-player",
+      "name": "Team Player",
+      "description": "Recognized for meaningful collaboration.",
+      "category": "Craft",
+      "tier": "silver",
+      "icon": "handshake",
+      "asset": "svg/team-player.svg",
+      "rule": {
+        "type": "manual_award"
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "back-again",
+      "name": "Back Again",
+      "description": "Validated findings in two different calendar months.",
+      "category": "Consistency",
+      "tier": "bronze",
+      "icon": "repeat",
+      "asset": "svg/back-again.svg",
+      "rule": {
+        "type": "distinct_months_with_validated_reports",
+        "threshold": 2
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "steady-signal",
+      "name": "Steady Signal",
+      "description": "Validated findings in three different calendar months.",
+      "category": "Consistency",
+      "tier": "silver",
+      "icon": "calendar",
+      "asset": "svg/steady-signal.svg",
+      "rule": {
+        "type": "distinct_months_with_validated_reports",
+        "threshold": 3
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "season-hopper",
+      "name": "Season Hopper",
+      "description": "Validated findings in two different seasons.",
+      "category": "Consistency",
+      "tier": "gold",
+      "icon": "book",
+      "asset": "svg/season-hopper.svg",
+      "rule": {
+        "type": "distinct_seasons_with_validated_reports",
+        "threshold": 2
+      },
+      "repeatable": false,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "on-the-podium",
+      "name": "On the Podium",
+      "description": "Finish a quarterly season in the top three.",
+      "category": "Competition",
+      "tier": "gold",
+      "icon": "podium",
+      "asset": "svg/on-the-podium.svg",
+      "rule": {
+        "type": "final_season_rank",
+        "period": "quarter",
+        "max_rank": 3
+      },
+      "repeatable": true,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "quarter-champion",
+      "name": "Quarter Champion",
+      "description": "Finish a quarterly season in first place.",
+      "category": "Competition",
+      "tier": "legendary",
+      "icon": "cup",
+      "asset": "svg/quarter-champion.svg",
+      "rule": {
+        "type": "final_season_rank",
+        "period": "quarter",
+        "max_rank": 1
+      },
+      "repeatable": true,
+      "requires_opt_in_to_publish": true
+    },
+    {
+      "id": "year-champion",
+      "name": "Year Champion",
+      "description": "Finish an annual season in first place.",
+      "category": "Competition",
+      "tier": "legendary",
+      "icon": "flag",
+      "asset": "svg/year-champion.svg",
+      "rule": {
+        "type": "final_season_rank",
+        "period": "year",
+        "max_rank": 1
+      },
+      "repeatable": true,
+      "requires_opt_in_to_publish": true
+    }
+  ]
+}

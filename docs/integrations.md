@@ -83,6 +83,14 @@ Sign in to the browser app to open the interactive documentation. The OpenAPI JS
 - On a conflict or timeout, re-read the resource and its history before retrying. For operations that document an idempotency key, retry with the same key and payload within 24 hours. The receipt contains only an identifier or success flag. Uploads use the evidence storage workflow without replay receipts.
 - Respect `429` and any `Retry-After` header. Give the response's request ID to your operator when asking about a failure.
 
+### Researcher achievements
+
+Read badge definitions and unlock rules with `GET /api/v1/achievements`. Resolve each catalog asset under `/achievements/` on the deployment origin. Read your earned badges and calculated progress with `GET /api/v1/achievements/me`. A peer lookup at `GET /api/v1/researchers/{userId}/achievements` returns only opted-in, featured badges whose source is visible to the caller. It omits program and report provenance.
+
+Program managers can grant or revoke manual recognition through `POST /api/v1/reports/{reportId}/achievements` with a badge ID, a reason, and a revoke flag. The report must be validated when granting recognition. Authorized reviewers can record or withdraw reproducibility confirmation with `POST /api/v1/reports/{reportId}/reproducibility`.
+
+Platform administrators can reconcile historical achievements with `POST /api/v1/achievements/reconcile` and finalize quarterly or annual rankings with `POST /api/v1/achievements/seasons/finalize`. The tool catalog includes equivalent MCP operations with the same permissions.
+
 ## Connect an MCP client
 
 Set the transport to **Streamable HTTP** and the server URL to `$BOUNTYDECK_URL/mcp`. For delegated access, use the client's OAuth setup with an identity-provider registration and PKCE. The protected resource metadata points the client to the configured authorization server. For Client Credentials, configure the client to acquire and renew a bearer access token before calling MCP.

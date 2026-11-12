@@ -55,7 +55,7 @@ For log ingestion, see the [Elastic and OpenTelemetry guide](docs/logging.md).
 - **Researchers** open **Programs**, choose an eligible program, and submit a finding. Open the report to add evidence, respond to questions, and follow its status.
 - **Triagers** open **Triage inbox** to review findings, assign reports, and update their status. Validated reports award points based on the program’s scoring rules.
 
-Open **Researcher profile** to see achievement badges and upload a GIF, PNG, or JPEG profile picture. To appear on the **Leaderboard**, opt in from your profile and choose a pseudonym.
+Open **Achievements** to explore the 30 badges, see what unlocks each one, and track your progress. Feature up to three earned badges in **Researcher profile**, where you can also upload a GIF, PNG, or JPEG profile picture. To appear on the **Leaderboard**, opt in from your profile and choose a pseudonym.
 
 ## Connect external tools
 

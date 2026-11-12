@@ -127,6 +127,13 @@ test.skipIf(!connectionString)(
       await client.query("DELETE FROM audit_events WHERE actor_id = $1", [
         actor,
       ]);
+      await client.query(
+        "DELETE FROM achievement_award_history WHERE award_id IN (SELECT id FROM achievement_awards WHERE user_id=$1)",
+        [actor],
+      );
+      await client.query("DELETE FROM achievement_awards WHERE user_id=$1", [
+        actor,
+      ]);
       await client.query("DELETE FROM reports WHERE program_id = $1", [
         program,
       ]);

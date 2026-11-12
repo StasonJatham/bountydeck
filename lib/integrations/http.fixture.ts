@@ -4,7 +4,10 @@ import type { Page } from "@playwright/test";
 import { Client } from "pg";
 import { expect } from "vitest";
 
-const origin = "http://bountydeck.test";
+const origin =
+  process.env.INTEGRATION_FIXTURE_ORIGIN ?? "http://bountydeck.test";
+const secretDirectory = process.env.INTEGRATION_FIXTURE_SECRETS ?? "secrets";
+const databasePort = process.env.INTEGRATION_FIXTURE_DB_PORT ?? "55432";
 const fixtureId = (suffix: number) =>
   `00000000-0000-4000-8000-${String(suffix).padStart(12, "0")}`;
 
@@ -25,14 +28,14 @@ export async function exerciseIntegrationHttp(
   browserPage: Page,
 ) {
   const admin = new Client({
-    connectionString: `postgresql://postgres:${encodeURIComponent(readFileSync("secrets/db_admin_password", "utf8").trim())}@127.0.0.1:55432/bountydeck`,
+    connectionString: `postgresql://postgres:${encodeURIComponent(readFileSync(`${secretDirectory}/db_admin_password`, "utf8").trim())}@127.0.0.1:${databasePort}/bountydeck`,
   });
   const [report, unrelated, attachment, notification] = Array.from(
     { length: 4 },
     () => randomUUID(),
   );
   const serviceActor = readFileSync(
-    "secrets/test_integration_service_actor",
+    `${secretDirectory}/test_integration_service_actor`,
     "utf8",
   ).trim();
   const marker = `Synthetic integration test ${report}`;
@@ -119,6 +122,8 @@ export async function exerciseIntegrationHttp(
       "oauth-protected-resource/mcp",
     );
     expect((await api("/identity", "invalid-fixture-token")).status).toBe(401);
+    expect((await api("/achievements", "")).status).toBe(401);
+    expect((await api("/achievements/me", "")).status).toBe(401);
     const unauthorizedMcp = await fetch(`${origin}/mcp`, { method: "POST" });
     expect(unauthorizedMcp.status).toBe(401);
     const discovery = await fetch(
@@ -172,6 +177,62 @@ export async function exerciseIntegrationHttp(
       expect(
         (await call(token, "get_identity", {})).result?.structuredContent?.data,
       ).toEqual(identity);
+      const catalog = await api("/achievements", token);
+      expect(catalog.status).toBe(200);
+      const definitions = await catalog.json();
+      expect(definitions.badges).toHaveLength(30);
+      expect(
+        (await call(token, "list_achievements", {})).result?.structuredContent
+          ?.data,
+      ).toEqual(definitions);
+      const ownAchievements = await api("/achievements/me", token);
+      expect(ownAchievements.status).toBe(200);
+      expect(
+        (await call(token, "get_my_achievements", {})).result?.structuredContent
+          ?.data,
+      ).toEqual(await ownAchievements.json());
+
+      const {
+        rows: [privateResearcher],
+      } = await admin.query<{ reporter_id: string }>(
+        "SELECT reporter_id FROM reports WHERE id=$1",
+        [unrelated],
+      );
+      const peerLookup = await api(
+        `/researchers/${privateResearcher.reporter_id}/achievements`,
+        token,
+      );
+      expect(peerLookup.status).toBe(200);
+      expect(await peerLookup.json()).toEqual({ items: [] });
+      expect(
+        (
+          await call(token, "get_researcher_achievements", {
+            userId: privateResearcher.reporter_id,
+          })
+        ).result?.structuredContent?.data,
+      ).toEqual({ items: [] });
+
+      const recognition = {
+        badgeId: "clear-signal",
+        reason: "Fixture",
+        revoke: false,
+      };
+      expect(
+        (
+          await api(`/reports/${report}/achievements`, token, {
+            method: "POST",
+            body: recognition,
+          })
+        ).status,
+      ).toBe(404);
+      const deniedRecognition = await call(token, "set_manual_achievement", {
+        reportId: unrelated,
+        ...recognition,
+      });
+      expect(deniedRecognition.result?.isError).toBe(true);
+      expect(
+        JSON.parse(deniedRecognition.result?.content?.[0]?.text ?? "{}"),
+      ).toMatchObject({ status: 404 });
       const search = await api(
         `/reports?${new URLSearchParams({ search: marker, limit: "1" })}`,
         token,

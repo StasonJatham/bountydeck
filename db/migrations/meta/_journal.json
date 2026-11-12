@@ -85,6 +85,20 @@
       "when": 1794475372011,
       "tag": "0011_profile_avatars",
       "breakpoints": false
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794475372012,
+      "tag": "0012_achievements",
+      "breakpoints": false
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794475372013,
+      "tag": "0013_manual_achievements",
+      "breakpoints": false
     }
   ]
 }
