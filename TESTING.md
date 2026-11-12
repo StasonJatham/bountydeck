@@ -35,7 +35,7 @@ Use a fresh fixture deployment for repeated acceptance runs. The fixture researc
 
 ## REST and MCP
 
-Run `npx vitest run lib/integrations/openapi.test.ts lib/integration-skills.test.ts` to check generated contracts and skill packages. Gitea runs these checks on pushes and pull requests.
+Run `npx vitest run lib/integrations/openapi.test.ts lib/integration-skills.test.ts` to check generated contracts and skill packages.
 
 For real OAuth tests, start the disposable Keycloak fixture, provision its integration clients with `./deploy/provision-test-integrations.sh`, and enable the canonical `http://bountydeck.test/mcp` audience, HTTP fixture mode, and the generated service binding in the application container. Use the loopback database from the Compose test override. Then run:
 
