@@ -170,7 +170,7 @@ services:
     secrets: [db_keycloak_password, keycloak_admin_password, oidc_client_secret]
     volumes:
       - ./deploy/keycloak-entrypoint.sh:/opt/keycloak/bountydeck-entrypoint.sh:ro
-      - ./deploy/bountydeck-realm.json:/opt/keycloak/data/import/bountydeck-realm.json:ro
+      - ./deploy/bountydeck-realm.json:/opt/keycloak/data/import/${KEYCLOAK_REALM:-bountydeck}-realm.json:ro
     healthcheck:
       test:
         - CMD
