@@ -15,3 +15,8 @@
 | ACH-DATA  | P1 | SCORE | Import and validate all 30 badges and their SVGs. Reconcile historical and corrected report and score data, verify reproduction, and snapshot finalized rankings. | DONE | |
 | ACH-UI    | P1 | ACH-DATA | Ship the private gallery, profile and dashboard badges, featuring and unlock notifications. Verify desktop, mobile and keyboard interaction. | DONE | |
 | ACH-API   | P1 | ACH-DATA | Share authorization and award operations across UI, REST and MCP. Document and test manual recognition, revocation and privacy. | DONE | |
+| HARD-BASE | P0 | OPS | Record baseline behavior, container privileges, mounts and ports. | DONE | |
+| HARD-ISO | P0 | HARD-BASE | Harden capabilities, writable paths, network segmentation and resource boundaries. | DONE | |
+| HARD-EDGE | P0 | HARD-BASE | Verify TLS, external proxy, OIDC routing and protected admin endpoints. | DONE | |
+| HARD-QA | P0 | HARD-ISO, HARD-EDGE | Run security checks, full regressions, restart, backup and restore on a disposable deployment. | DONE | |
+| HARD-ROOTLESS | P1 | HARD-ISO | Document rootless Docker and Podman, and verify available engines without privileged fallback. | ACTIVE | Rootless Linux runtimes unavailable on verification host |

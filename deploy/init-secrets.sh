@@ -2,8 +2,34 @@
 set -eu
 cd "$(dirname "$0")/.."
 umask 077
+
+required="db_admin_password db_app_password db_worker_password db_migrate_password auth_secret"
+identity="db_keycloak_password keycloak_admin_password oidc_client_secret"
+optional="smtp_url internal_ca.pem"
+case "${1:-}" in
+  keycloak) required="$required $identity" ;;
+  '') optional="$optional $identity" ;;
+  *) printf 'Usage: %s [keycloak]\n' "$0" >&2; exit 1 ;;
+esac
+if [ "$#" -gt 1 ]; then
+  printf 'Usage: %s [keycloak]\n' "$0" >&2
+  exit 1
+fi
+
+if [ -L secrets ]; then
+  printf 'The secrets directory must not be a symbolic link.\n' >&2
+  exit 1
+fi
 mkdir -p secrets
 chmod 0700 secrets
+
+for name in $required $optional; do
+  path="secrets/$name"
+  if [ -L "$path" ] || { [ -e "$path" ] && [ ! -f "$path" ]; }; then
+    printf 'Expected a regular secret file at %s.\n' "$path" >&2
+    exit 1
+  fi
+done
 
 generate() {
   temp=$(mktemp secrets/.new.XXXXXX)
@@ -13,26 +39,20 @@ generate() {
   trap - EXIT
 }
 
-for name in db_admin_password db_app_password db_worker_password db_migrate_password auth_secret; do
-  if [ ! -e "secrets/$name" ]; then
+for name in $required; do
+  if [ ! -s "secrets/$name" ]; then
     generate "$name"
   fi
 done
 
-case "${1:-}" in
-  keycloak)
-    for name in db_keycloak_password keycloak_admin_password oidc_client_secret; do
-      if [ ! -s "secrets/$name" ]; then
-        generate "$name"
-      fi
-    done
-    ;;
-  '') ;;
-  *) printf 'Usage: %s [keycloak]\n' "$0" >&2; exit 1 ;;
-esac
+for name in $optional; do
+  if [ ! -e "secrets/$name" ]; then
+    : > "secrets/$name"
+  fi
+done
 
-touch secrets/db_keycloak_password secrets/keycloak_admin_password secrets/oidc_client_secret secrets/smtp_url secrets/internal_ca.pem
-# Bind-mounted secrets must be readable by the different service UIDs.
-# On the host the enclosing directory limits access to the deploy user.
-chmod 0444 secrets/db_* secrets/keycloak_admin_password secrets/auth_secret \
-  secrets/oidc_client_secret secrets/smtp_url secrets/internal_ca.pem
+# File-backed Compose secrets are bind mounts. Service UIDs differ and
+# the private directory keeps these readable only by the host deploy user.
+for name in $required $optional; do
+  chmod 0444 "secrets/$name"
+done

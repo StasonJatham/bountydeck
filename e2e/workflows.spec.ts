@@ -311,7 +311,15 @@ test("organization and program administration enforce role boundaries", async ({
   await grant.getByLabel("Organization").selectOption(orgId!);
   await grant.getByLabel("User ID").fill(managerId);
   await grant.getByLabel("Role").selectOption("admin");
-  await grant.getByRole("button", { name: "Grant", exact: true }).click();
+  const [grantResponse] = await Promise.all([
+    admin.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        new URL(response.url()).pathname === "/admin",
+    ),
+    grant.getByRole("button", { name: "Grant", exact: true }).click(),
+  ]);
+  expect(grantResponse.ok()).toBeTruthy();
   await expect(
     admin.getByText("organization.role_grant").first(),
   ).toBeVisible();

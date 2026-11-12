@@ -1,9 +1,22 @@
 name: bountydeck
 
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: ${BOUNTYDECK_LOG_MAX_SIZE:-10m}
+    max-file: ${BOUNTYDECK_LOG_MAX_FILES:-3}
+
+x-runtime-tmpfs: &runtime-tmpfs /tmp:rw,nosuid,nodev,noexec,mode=1777,size=64m
+
 x-bountydeck: &bountydeck
   image: ${BOUNTYDECK_IMAGE:-bountydeck:local}
   build: .
+  init: true
+  read_only: true
+  cap_drop: [ALL]
   security_opt: [no-new-privileges:true]
+  tmpfs: [*runtime-tmpfs]
+  logging: *logging
   depends_on:
     postgres:
       condition: service_healthy
@@ -15,9 +28,28 @@ x-telemetry: &telemetry
 
 services:
   postgres:
+    read_only: true
+    cap_drop: [ALL]
+    # The upstream entrypoint prepares the volume and switches to the postgres user.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    tmpfs:
+      - *runtime-tmpfs
+      - /var/run/postgresql:rw,nosuid,nodev,noexec,mode=03775,size=16m
+    cpus: ${BOUNTYDECK_POSTGRES_CPUS:-2}
+    mem_limit: ${BOUNTYDECK_POSTGRES_MEMORY:-1g}
+    pids_limit: ${BOUNTYDECK_POSTGRES_PIDS:-256}
+    ulimits:
+      nofile: ${BOUNTYDECK_POSTGRES_NOFILE:-8192}
+    logging: *logging
     security_opt: [no-new-privileges:true]
     image: postgres:18.6-alpine@sha256:9ba53c7d41ea093baf5c1ba635ba5434c4f979880527d49bb7d9237d3193085b
     restart: unless-stopped
+    command:
+      [
+        "postgres",
+        "-c",
+        "max_connections=${BOUNTYDECK_POSTGRES_MAX_CONNECTIONS:-100}",
+      ]
     environment:
       BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
@@ -50,7 +82,15 @@ services:
 
   application:
     <<: *bountydeck
+    cpus: ${BOUNTYDECK_APP_CPUS:-2}
+    mem_limit: ${BOUNTYDECK_APP_MEMORY:-1g}
+    pids_limit: ${BOUNTYDECK_APP_PIDS:-256}
+    ulimits:
+      nofile: ${BOUNTYDECK_APP_NOFILE:-8192}
     restart: unless-stopped
+    tmpfs:
+      - *runtime-tmpfs
+      - /app/.next/cache:rw,nosuid,nodev,noexec,mode=0700,uid=1000,gid=1000,size=128m
     environment:
       <<: *telemetry
       BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
@@ -88,6 +128,11 @@ services:
 
   worker:
     <<: *bountydeck
+    cpus: ${BOUNTYDECK_WORKER_CPUS:-1}
+    mem_limit: ${BOUNTYDECK_WORKER_MEMORY:-512m}
+    pids_limit: ${BOUNTYDECK_WORKER_PIDS:-128}
+    ulimits:
+      nofile: ${BOUNTYDECK_WORKER_NOFILE:-4096}
     restart: unless-stopped
     command: ["node", "--experimental-strip-types", "notifications/worker.ts"]
     environment:
@@ -104,6 +149,11 @@ services:
 
   migrate:
     <<: *bountydeck
+    cpus: ${BOUNTYDECK_MIGRATE_CPUS:-1}
+    mem_limit: ${BOUNTYDECK_MIGRATE_MEMORY:-512m}
+    pids_limit: ${BOUNTYDECK_MIGRATE_PIDS:-128}
+    ulimits:
+      nofile: ${BOUNTYDECK_MIGRATE_NOFILE:-4096}
     profiles: [tools]
     restart: "no"
     command: ["node", "db/migrate.ts"]
@@ -116,6 +166,11 @@ services:
 
   retention:
     <<: *bountydeck
+    cpus: ${BOUNTYDECK_RETENTION_CPUS:-1}
+    mem_limit: ${BOUNTYDECK_RETENTION_MEMORY:-512m}
+    pids_limit: ${BOUNTYDECK_RETENTION_PIDS:-128}
+    ulimits:
+      nofile: ${BOUNTYDECK_RETENTION_NOFILE:-4096}
     profiles: [tools]
     restart: "no"
     command: ["node", "deploy/retention.ts"]
@@ -129,22 +184,43 @@ services:
       - attachments:/var/lib/bountydeck/attachments
 
   reverse-proxy:
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    logging: *logging
+    cpus: ${BOUNTYDECK_CADDY_CPUS:-1}
+    mem_limit: ${BOUNTYDECK_CADDY_MEMORY:-256m}
+    pids_limit: ${BOUNTYDECK_CADDY_PIDS:-128}
+    ulimits:
+      nofile: ${BOUNTYDECK_CADDY_NOFILE:-8192}
     security_opt: [no-new-privileges:true]
     image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
     restart: unless-stopped
     ports:
-      - "${BIND_ADDRESS:-127.0.0.1}:80:80"
-      - "${BIND_ADDRESS:-127.0.0.1}:443:443"
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-80}:${HTTP_PORT:-80}"
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-443}:${HTTPS_PORT:-443}"
     environment:
       CADDY_SITE: ${CADDY_SITE:?Set CADDY_SITE}
+      AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
+      BIND_ADDRESS: ${BIND_ADDRESS:-127.0.0.1}
+      CADDY_IDENTITY_ADMIN_ENABLED: ${CADDY_IDENTITY_ADMIN_ENABLED:-false}
     networks:
       web:
-        aliases: ["${APP_HOSTNAME:?Set APP_HOSTNAME}"]
+        aliases: ["${CADDY_NETWORK_ALIAS:-${APP_HOSTNAME:?Set APP_HOSTNAME}}"]
+      identity:
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy:/data
+      - caddy_config:/config
 
   keycloak:
+    cap_drop: [ALL]
+    logging: *logging
+    cpus: ${BOUNTYDECK_KEYCLOAK_CPUS:-2}
+    mem_limit: ${BOUNTYDECK_KEYCLOAK_MEMORY:-1536m}
+    pids_limit: ${BOUNTYDECK_KEYCLOAK_PIDS:-512}
+    ulimits:
+      nofile: ${BOUNTYDECK_KEYCLOAK_NOFILE:-8192}
     security_opt: [no-new-privileges:true]
     image: quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41
     profiles: [keycloak]
@@ -166,7 +242,7 @@ services:
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bountydeck}
       AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
       KEYCLOAK_SSL_REQUIRED: ${KEYCLOAK_SSL_REQUIRED:-all}
-    networks: [web, database]
+    networks: [identity, database]
     secrets: [db_keycloak_password, keycloak_admin_password, oidc_client_secret]
     volumes:
       - ./deploy/keycloak-entrypoint.sh:/opt/keycloak/bountydeck-entrypoint.sh:ro
@@ -188,6 +264,8 @@ services:
 networks:
   web:
   worker:
+  identity:
+    internal: true
   database:
     internal: true
 
@@ -195,6 +273,7 @@ volumes:
   postgres:
   attachments:
   caddy:
+  caddy_config:
 
 secrets:
   db_admin_password:

@@ -2,13 +2,43 @@
   auto_https disable_redirects
   admin off
   skip_install_trust
+  servers {
+    timeouts {
+      read_header 10s
+      idle 2m
+    }
+  }
   log default {
     exclude http.log.error
   }
 }
 
+(canonical_origin) {
+  header_up X-Forwarded-Proto {bountydeck_scheme}
+  header_up X-Forwarded-Host {bountydeck_authority}
+}
+
 {$CADDY_SITE} {
   {$CADDY_TLS}
+  header -Server
+  handle_errors {
+    header -Server
+    respond "" {err.status_code}
+  }
+  request_body {
+    max_size 8MiB
+  }
+
+  # Keep the public origin independent of the hop that terminates TLS.
+  map {env.AUTH_URL} {bountydeck_scheme} {bountydeck_authority} {
+    ~^(https?)://([^/?#@]+)$ ${1} ${2}
+  }
+
+  # Caddy supplies X-Forwarded-For, -Proto and -Host. Remove the
+  # optional client-supplied fields before either upstream can use them.
+  request_header -Forwarded
+  request_header -X-Forwarded-Port
+  request_header -X-Forwarded-Prefix
 
   log {
     output stdout
@@ -30,10 +60,19 @@
   log_skip @quiet
   @identity path /identity /identity/*
   handle @identity {
-    reverse_proxy keycloak:8080
+    @restricted_admin {
+      path /identity/admin /identity/admin/* /identity/realms/master /identity/realms/master/*
+      expression `!({env.CADDY_IDENTITY_ADMIN_ENABLED} == "true" && {env.BIND_ADDRESS} == "127.0.0.1" && {bountydeck_scheme} == "http" && {bountydeck_authority}.matches("^(bountydeck[.]test|bossob[.]test|localhost|127[.]0[.]0[.]1)(:[0-9]+)?$"))`
+    }
+    respond @restricted_admin 404
+    reverse_proxy keycloak:8080 {
+      import canonical_origin
+    }
   }
 
   handle {
-    reverse_proxy application:3000
+    reverse_proxy application:3000 {
+      import canonical_origin
+    }
   }
 }

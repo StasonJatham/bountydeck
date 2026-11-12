@@ -15,7 +15,7 @@ docker compose run --rm migrate
 docker compose --profile keycloak up -d --no-build --wait
 ```
 
-Check the app at `http://bountydeck.test` and the identity console at `http://bountydeck.test/identity/admin/`. The initial Keycloak console account is `bountydeck-bootstrap`. Retrieve its randomly generated password from `secrets/keycloak_admin_password`. In the **bountydeck** realm, create a user, set their credentials and record their ID from the user details page. That ID is the OIDC subject for the bundled client. Sign in once with the realm user so BountyDeck records the identity. Set the shell variable `subject` to that user ID. Grant platform administration from the migration container:
+Check the app at `http://bountydeck.test` and the identity console at `http://bountydeck.test/identity/admin/`. For an existing loopback HTTP fixture, set `CADDY_IDENTITY_ADMIN_ENABLED=true` to enable the console. The initial Keycloak console account is `bountydeck-bootstrap`. Retrieve its randomly generated password from `secrets/keycloak_admin_password`. In the **bountydeck** realm, create a user, set their credentials and record their ID from the user details page. That ID is the OIDC subject for the bundled client. Sign in once with the realm user so BountyDeck records the identity. Set the shell variable `subject` to that user ID. Grant platform administration from the migration container:
 
 ```sh
 docker compose run --rm migrate node db/grant-admin.ts \
@@ -43,15 +43,75 @@ The fixture usernames are `local-platform-admin`, `local-manager`, `local-triage
 ## Private TLS deployment
 
 1. Allocate a DNS name such as `bounty.example.internal`. Point clients at the deployment host.
-2. Set `APP_HOSTNAME=bounty.example.internal`, `AUTH_URL=https://bounty.example.internal`, `CADDY_SITE=https://bounty.example.internal`, and `BIND_ADDRESS` to the intended host interface. For the bundled Keycloak set `OIDC_ISSUER=https://bounty.example.internal/identity/realms/bountydeck` and `KEYCLOAK_SSL_REQUIRED=all`.
-3. Place the certificate chain and key issued by your internal CA at `secrets/tls_cert.pem` and `secrets/tls_key.pem`. Make them readable by the Caddy container and keep the enclosing host directory private. Install the CA on clients. Add the CA chain to `secrets/internal_ca.pem` so Node can verify HTTPS connections to the issuer and private notification servers.
+2. Set `APP_HOSTNAME=bounty.example.internal`, `AUTH_URL=https://bounty.example.internal`, `CADDY_SITE=https://bounty.example.internal`, and `BIND_ADDRESS` to the intended host interface. For the bundled Keycloak set `OIDC_ISSUER=https://bounty.example.internal/identity/realms/bountydeck`, `KEYCLOAK_SSL_REQUIRED=all`, and `CADDY_IDENTITY_ADMIN_ENABLED=false`.
+3. Place the certificate chain and key issued by your internal CA at `secrets/tls_cert.pem` and `secrets/tls_key.pem`. Set those files to mode `0444` for the container bind mounts and keep the enclosing `secrets/` directory at `0700` on the host. Install the CA on clients. Add the CA chain to `secrets/internal_ca.pem` so Node can verify HTTPS connections to the issuer and private notification servers.
 4. Run the installation commands above with `docker compose -f compose.yaml -f deploy/compose.tls.yaml`. Recreate the affected containers after replacing a bind-mounted secret file. TLS uses the provisioned certificate and does not require a public ACME server.
 
-With an existing reverse proxy, forward requests to the application through a private network, preserve the original Host, set `X-Forwarded-Proto: https` and overwrite client-supplied forwarding headers. Do not publish the application directly. Set `AUTH_URL` to the public HTTPS origin. If Keycloak is in use, forward `/identity/` to that service, configure the issuer using the public HTTPS origin, and make that origin reachable from the application with a trusted certificate. Keep administrative identity endpoints restricted to authorized operators.
+### High ports for rootless engines
+
+Set the published ports above the host's unprivileged port threshold. Compose uses matching host and container ports so bundled OIDC can use the same issuer inside and outside the stack. Keep `APP_HOSTNAME` as a hostname without a port.
+
+| Setting                            | Default       | Local HTTP example                                       | Private TLS example                                       |
+| ---------------------------------- | ------------- | -------------------------------------------------------- | --------------------------------------------------------- |
+| `HTTP_PORT`                        | `80`          | `8080`                                                   | `8080`                                                    |
+| `HTTPS_PORT`                       | `443`         | `8443`                                                   | `8443`                                                    |
+| `AUTH_URL` and `CADDY_SITE`        | Set in `.env` | `http://bountydeck.test:8080`                            | `https://bountydeck.test:8443`                            |
+| `OIDC_ISSUER` for bundled Keycloak | Set in `.env` | `http://bountydeck.test:8080/identity/realms/bountydeck` | `https://bountydeck.test:8443/identity/realms/bountydeck` |
+
+Update an external OIDC client's redirect URI when the public origin changes.
+
+### TLS terminated by an existing proxy
+
+Keep BountyDeck's Caddy as the private router for the application and optional Keycloak. For a host-based proxy, forward the entire site to `http://127.0.0.1:8080` and preserve the public Host. Use these values with the base Compose file:
+
+```dotenv
+APP_HOSTNAME=bounty.example.internal
+AUTH_URL=https://bounty.example.internal
+CADDY_SITE=http://bounty.example.internal:8080
+CADDY_NETWORK_ALIAS=bountydeck-ingress
+HTTP_PORT=8080
+HTTPS_PORT=8443
+BIND_ADDRESS=127.0.0.1
+OIDC_ISSUER=https://bounty.example.internal/identity/realms/bountydeck
+KEYCLOAK_SSL_REQUIRED=all
+CADDY_IDENTITY_ADMIN_ENABLED=false
+```
+
+For a containerized gateway, put the gateway and BountyDeck's Caddy on a shared Docker network and forward to `http://bountydeck-ingress:8080`. Add only Caddy to the gateway network with an override like this:
+
+```yaml
+services:
+  reverse-proxy:
+    networks:
+      gateway:
+        aliases: [bountydeck-ingress]
+networks:
+  gateway:
+    external: true
+    name: internal_gateway
+```
+
+The public hostname must resolve to the external TLS proxy from the application container. The distinct internal alias preserves that DNS route. For a private TLS certificate, put its issuing CA in `secrets/internal_ca.pem`. The Keycloak admin and master realm routes are blocked at TLS ingress. Use `/opt/keycloak/bin/kcadm.sh` from an authorized shell inside the Keycloak container for production administration.
+
+## Runtime limits
+
+| Service     | Override prefix        | CPUs |  Memory | PID limit | Open files |
+| ----------- | ---------------------- | ---: | ------: | --------: | ---------: |
+| Application | `BOUNTYDECK_APP`       |    2 |   1 GiB |       256 |      8,192 |
+| Worker      | `BOUNTYDECK_WORKER`    |    1 | 512 MiB |       128 |      4,096 |
+| PostgreSQL  | `BOUNTYDECK_POSTGRES`  |    2 |   1 GiB |       256 |      8,192 |
+| Keycloak    | `BOUNTYDECK_KEYCLOAK`  |    2 | 1.5 GiB |       512 |      8,192 |
+| Caddy       | `BOUNTYDECK_CADDY`     |    1 | 256 MiB |       128 |      8,192 |
+| Migration   | `BOUNTYDECK_MIGRATE`   |    1 | 512 MiB |       128 |      4,096 |
+| Retention   | `BOUNTYDECK_RETENTION` |    1 | 512 MiB |       128 |      4,096 |
+
+Append `_CPUS`, `_MEMORY`, `_PIDS` or `_NOFILE` to a prefix and set the resulting variable in `.env`. For example, `BOUNTYDECK_APP_MEMORY=2g` doubles the application's memory limit. The PID limits include threads. PostgreSQL defaults to 100 connections, adjustable with `BOUNTYDECK_POSTGRES_MAX_CONNECTIONS`. Tune connection count, PID limits and memory together. Keycloak uses the upstream container-aware JVM heap settings. Leave memory headroom for JVM native allocations and startup augmentation. Logs use the Docker `json-file` driver with a 10 MiB rotation threshold and three files per service, configurable via `BOUNTYDECK_LOG_MAX_SIZE` and `BOUNTYDECK_LOG_MAX_FILES`.
+
+Application and maintenance containers run as the unprivileged Node user with read-only roots. The application uses a temporary Next.js image cache and the private evidence volume. Caddy writes certificate data and configuration state to named volumes. PostgreSQL writes to its data volume and temporary socket directory. Keycloak's upstream startup needs a writable distribution to import and configure the realm. The internal identity network joins only Caddy and Keycloak. The separate internal PostgreSQL network is shared by the database clients. Keep untrusted workloads off both networks.
 
 ## External OIDC
 
-Initialize secrets with `./deploy/init-secrets.sh` and leave the `keycloak` profile disabled. Configure an existing identity provider for a confidential OpenID Connect web client using Authorization Code Flow with PKCE S256. Register the exact `https://<app-host>/api/auth/callback/oidc` redirect URI. Set its discovery issuer in `OIDC_ISSUER`, its client ID in `OIDC_CLIENT_ID` and its client secret in `secrets/oidc_client_secret`. When granting platform administration, pass `oidc:<issuer>` as the provider and use the subject issued to this client. Put any private issuer CA chain in `secrets/internal_ca.pem`. Remove the Keycloak proxy route from the Caddyfile for this configuration.
+Initialize secrets with `./deploy/init-secrets.sh` and leave the `keycloak` profile disabled. Configure an existing identity provider for a confidential OpenID Connect web client using Authorization Code Flow with PKCE S256. Register the exact `https://<app-host>/api/auth/callback/oidc` redirect URI. Set its discovery issuer in `OIDC_ISSUER`, its client ID in `OIDC_CLIENT_ID` and its client secret in `secrets/oidc_client_secret`. When granting platform administration, pass `oidc:<issuer>` as the provider and use the subject issued to this client. Put any private issuer CA chain in `secrets/internal_ca.pem`. The Keycloak profile can stay disabled. The external issuer must be reachable from the application container.
 
 ## Evidence
 
@@ -94,7 +154,7 @@ docker compose run --rm --no-deps --entrypoint tar application \
 docker compose --profile keycloak up -d --no-build --wait
 ```
 
-Keep the versioned deployment files, `.env` and secret files with an encrypted backup set. The bundled realm retains its imported OIDC client secret in its database, so restore the matching `oidc_client_secret`. Secure backups as confidential report evidence. If Keycloak is disabled, omit its dump and profile from these commands.
+Keep the versioned deployment files and `.env` in protected recovery storage. Back up secret files separately in an encrypted set. The bundled realm retains its imported OIDC client secret in its database, so restore the matching `oidc_client_secret`. Secure backups as confidential report evidence. If Keycloak is disabled, omit its dump and profile from these commands.
 
 Restore into a fresh stack or a separate Compose project with unused ports. Initialize PostgreSQL using the matching secret files and original role names. Keep other services stopped. The databases must be empty, so skip migrations until after the restores.
 

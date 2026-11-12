@@ -1,0 +1,7 @@
+# Pair with deploy/compose.tls.yaml. Set AUTH_URL, CADDY_SITE, and the
+# bundled OIDC_ISSUER to the same HTTPS origin, including HTTPS_PORT.
+# This publishes only HTTPS. The default listener is loopback.
+services:
+  reverse-proxy:
+    ports: !override
+      - "${BIND_ADDRESS:-127.0.0.1}:${HTTPS_PORT:-8443}:${HTTPS_PORT:-8443}"
