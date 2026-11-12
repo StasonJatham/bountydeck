@@ -1,3 +1,4 @@
+import { loggedRoute } from "../../../../../lib/telemetry/http";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { withActor } from "../../../../../db";
@@ -9,7 +10,7 @@ import {
 } from "../../../../../db/schema";
 import { auth } from "../../../../../lib/auth";
 
-export async function GET(
+async function handle(
   _: Request,
   context: { params: Promise<{ id: string }> },
 ) {
@@ -63,3 +64,5 @@ export async function GET(
     },
   });
 }
+
+export const GET = loggedRoute("/api/reports/[id]/export", handle);

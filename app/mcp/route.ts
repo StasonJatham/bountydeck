@@ -1,3 +1,4 @@
+import { loggedRoute } from "../../lib/telemetry/http";
 import {
   McpServer,
   ResourceTemplate,
@@ -204,4 +205,7 @@ async function handle(request: Request) {
   }
 }
 
-export { handle as GET, handle as POST, handle as DELETE };
+const logged = loggedRoute("/mcp", handle);
+export const GET = logged;
+export const POST = logged;
+export const DELETE = logged;

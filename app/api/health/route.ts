@@ -1,3 +1,4 @@
+import { loggedRoute } from "../../../lib/telemetry/http";
 import { Pool } from "pg";
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -5,7 +6,7 @@ const pool = new Pool({
   connectionTimeoutMillis: 2000,
 });
 
-export async function GET() {
+async function handle() {
   try {
     if (!process.env.DATABASE_URL)
       return Response.json({ status: "unavailable" }, { status: 503 });
@@ -15,3 +16,5 @@ export async function GET() {
     return Response.json({ status: "unavailable" }, { status: 503 });
   }
 }
+
+export const GET = loggedRoute("/api/health", handle, { failuresOnly: true });

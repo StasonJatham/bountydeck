@@ -46,6 +46,8 @@ docker compose run --rm migrate node db/grant-admin.ts \
   oidc:http://bountydeck.test/identity/realms/bountydeck "$subject"
 ```
 
+For log ingestion, see the [Elastic and OpenTelemetry guide](docs/logging.md).
+
 ## Use BountyDeck
 
 - **Platform administrators** create an organization in **Administration** and grant the organization administrator role. Users can copy their BountyDeck user ID from **Researcher profile** after their first sign-in.

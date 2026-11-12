@@ -1,9 +1,10 @@
+import { loggedRoute } from "../../../../lib/telemetry/http";
 import { z } from "zod";
 import { auth } from "../../../../lib/auth";
 import { evidenceResponse } from "../../../../lib/integrations/evidence";
 import { ReportError } from "../../../../lib/integrations/reports";
 
-export async function GET(
+async function handle(
   _: Request,
   context: { params: Promise<{ id: string }> },
 ) {
@@ -19,3 +20,5 @@ export async function GET(
     throw error;
   }
 }
+
+export const GET = loggedRoute("/api/evidence/[id]", handle);

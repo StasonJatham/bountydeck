@@ -1,3 +1,4 @@
+import { logEvent } from "./telemetry/logger";
 import { readTheme } from "./theme";
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
@@ -39,6 +40,45 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => {
     pages: { signIn: "/sign-in", error: "/sign-in" },
     theme: { colorScheme: theme === "system" ? "auto" : theme },
     secret: secret("AUTH_SECRET"),
+    logger: {
+      error(error) {
+        logEvent({
+          service: "application",
+          level: "error",
+          action: "auth.error",
+          message: "Authentication operation failed",
+          outcome: "failure",
+          errorType: error.name,
+        });
+      },
+      warn(code) {
+        logEvent({
+          service: "application",
+          level: "warn",
+          action: "auth.warning",
+          message: "Authentication warning",
+          errorType: code,
+        });
+      },
+    },
+    events: {
+      async signIn() {
+        logEvent({
+          service: "application",
+          action: "auth.sign_in",
+          message: "Sign-in completed",
+          outcome: "success",
+        });
+      },
+      async signOut() {
+        logEvent({
+          service: "application",
+          action: "auth.sign_out",
+          message: "Sign-out completed",
+          outcome: "success",
+        });
+      },
+    },
     providers: [
       {
         id: "oidc",

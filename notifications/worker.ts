@@ -1,3 +1,4 @@
+import { flushLogs, logEvent } from "../lib/telemetry/logger.ts";
 import { setTimeout } from "node:timers/promises";
 import pg from "pg";
 import { createDeliveryTransport } from "./transport.ts";
@@ -11,14 +12,33 @@ const maxAttempts = Number(process.env.NOTIFICATION_MAX_ATTEMPTS ?? 6);
 if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > 20) {
   throw new Error("NOTIFICATION_MAX_ATTEMPTS must be between 1 and 20");
 }
-const send = createDeliveryTransport(process.env);
+const send = (() => {
+  try {
+    return createDeliveryTransport(process.env);
+  } catch {
+    logEvent({
+      service: "worker",
+      level: "error",
+      action: "worker.config_invalid",
+      message: "Notification worker configuration is invalid",
+      outcome: "failure",
+    });
+    throw new Error("Notification worker configuration is invalid");
+  }
+})();
 const pool = new pg.Pool({
   connectionString,
   max: 1,
   connectionTimeoutMillis: 5_000,
 });
 pool.on("error", () =>
-  console.error("Notification worker database connection lost"),
+  logEvent({
+    service: "worker",
+    level: "error",
+    action: "database.connection_lost",
+    message: "Notification worker database connection lost",
+    outcome: "failure",
+  }),
 );
 let stopping = false;
 process.on("SIGTERM", () => {
@@ -53,6 +73,7 @@ async function processOne() {
 
     // ponytail: retain one row lock across delivery. Add committed leases only
     // if worker concurrency or long-running transports make that costly.
+    const started = process.hrtime.bigint();
     const delivery = await send(job);
     const retryCount = job.retry_count + 1;
     const status =
@@ -79,6 +100,18 @@ async function processOne() {
       [job.id, job.attempts + 1, delivery.result],
     );
     await client.query("COMMIT");
+    logEvent({
+      service: "worker",
+      action: "notification.delivery_attempt",
+      message: "Notification delivery attempt completed",
+      level: status === "delivered" ? "info" : "warn",
+      outcome: status === "delivered" ? "success" : "failure",
+      deliveryId: job.id,
+      attempt: job.attempts + 1,
+      result: delivery.result,
+      deliveryStatus: status,
+      durationNs: Number(process.hrtime.bigint() - started),
+    });
     return true;
   } catch (error) {
     discard = true;
@@ -88,15 +121,27 @@ async function processOne() {
   }
 }
 
+logEvent({
+  service: "worker",
+  action: "worker.started",
+  message: "Notification worker started",
+});
 try {
   while (!stopping) {
     try {
       if (!(await processOne())) await setTimeout(1_000);
     } catch {
-      console.error("Notification worker could not process queue");
+      logEvent({
+        service: "worker",
+        level: "error",
+        action: "notification.queue_failed",
+        message: "Notification worker could not process queue",
+        outcome: "failure",
+      });
       if (!stopping) await setTimeout(5_000);
     }
   }
 } finally {
   await pool.end();
+  await flushLogs();
 }

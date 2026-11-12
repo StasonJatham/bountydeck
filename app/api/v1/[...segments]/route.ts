@@ -1,3 +1,4 @@
+import { loggedRoute } from "../../../../lib/telemetry/http";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { authenticateIntegration } from "../../../../lib/integrations/auth";
@@ -88,4 +89,7 @@ async function handle(
     return problem(error, requestId, { challenge: true });
   }
 }
-export { handle as GET, handle as POST, handle as PATCH };
+const logged = loggedRoute("/api/v1/[...segments]", handle);
+export const GET = logged;
+export const POST = logged;
+export const PATCH = logged;

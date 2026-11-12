@@ -13,3 +13,4 @@
 - Limited the Administration menu and route to platform administrators. Organization administrators use the Organizations area.
 - Adopted BountyDeck branding, bundled Geist typography, and added a responsive workspace with role-aware navigation and organization filtering.
 - Added OAuth-protected REST and MCP case management, OpenAPI documentation, integration audit history, and portable Agent Skills.
+- Added structured application logs, optional OTLP/HTTP export, and privacy-filtered proxy access logs.

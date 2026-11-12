@@ -2,10 +2,32 @@
   auto_https disable_redirects
   admin off
   skip_install_trust
+  log default {
+    exclude http.log.error
+  }
 }
 
 {$CADDY_SITE} {
   {$CADDY_TLS}
+
+  log {
+    output stdout
+    format filter {
+      wrap json
+      fields {
+        request>uri delete
+        request>headers delete
+        request>remote_ip delete
+        request>remote_port delete
+        request>client_ip delete
+        request>tls delete
+        resp_headers delete
+        user_id delete
+      }
+    }
+  }
+  @quiet path /api/health /_next/static/*
+  log_skip @quiet
   @identity path /identity /identity/*
   handle @identity {
     reverse_proxy keycloak:8080

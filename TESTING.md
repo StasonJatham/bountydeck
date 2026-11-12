@@ -45,3 +45,7 @@ RUN_INTEGRATION_AUTH_FIXTURE=1 RUN_INTEGRATION_HTTP_FIXTURE=1 \
 ```
 
 The test uses real OAuth exchanges and disposable case records. It verifies browser, REST, and MCP access, record isolation, idempotent writes, scoring, audit history, notification queue effects, and revocation.
+
+## Logging
+
+Run `npx vitest run lib/telemetry/logger.test.ts` to check ECS fields, OTLP mapping, request-data exclusion, and stdout fallback when a local OTLP receiver rejects a batch.

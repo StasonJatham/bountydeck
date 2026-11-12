@@ -1,10 +1,11 @@
+import { loggedRoute } from "../../../lib/telemetry/http";
 import { auth } from "../../../lib/auth";
 import { authenticateIntegration } from "../../../lib/integrations/auth";
 import { IntegrationError } from "../../../lib/integrations/errors";
 import { problem, protectTransport } from "../../../lib/integrations/http";
 import { openApi } from "../../../lib/integrations/openapi";
 
-export async function GET(request: Request) {
+async function handle(request: Request) {
   try {
     if (request.headers.has("authorization")) {
       protectTransport(request);
@@ -19,3 +20,5 @@ export async function GET(request: Request) {
     return problem(error, undefined, { challenge: true });
   }
 }
+
+export const GET = loggedRoute("/api/openapi.json", handle);

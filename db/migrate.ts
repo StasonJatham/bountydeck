@@ -1,3 +1,4 @@
+import { flushLogs, logEvent } from "../lib/telemetry/logger.ts";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
@@ -21,7 +22,25 @@ async function main() {
   }
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+  .then(
+    () => {
+      logEvent({
+        service: "migrate",
+        action: "database.migration_completed",
+        message: "Database migrations completed",
+        outcome: "success",
+      });
+    },
+    () => {
+      logEvent({
+        service: "migrate",
+        level: "error",
+        action: "database.migration_failed",
+        message: "Database migration failed",
+        outcome: "failure",
+      });
+      process.exitCode = 1;
+    },
+  )
+  .finally(flushLogs);

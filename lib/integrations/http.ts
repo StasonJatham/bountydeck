@@ -1,3 +1,4 @@
+import { logEvent } from "../telemetry/logger";
 import { createHash, randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -228,6 +229,17 @@ export async function executeOperation(
   requestId: string,
   requestKey?: string,
 ): Promise<unknown> {
+  const started = process.hrtime.bigint();
+  const completed = () =>
+    logEvent({
+      service: "application",
+      action: operation.name,
+      message: "Integration operation completed",
+      outcome: "success",
+      status: operation.status,
+      requestId,
+      durationNs: Number(process.hrtime.bigint() - started),
+    });
   try {
     if (requestKey && !/^[A-Za-z0-9._:-]{1,128}$/.test(requestKey))
       throw new IntegrationError(422, "invalid_idempotency_key");
@@ -242,9 +254,10 @@ export async function executeOperation(
           "evidence_unavailable",
         );
       await audit(principal, operation, input, requestId, operation.status);
+      completed();
       return data;
     }
-    return await withActorTransaction(principal.actorId, async (tx) => {
+    const result = await withActorTransaction(principal.actorId, async (tx) => {
       const { actorId, clientId } = principal;
       const fingerprint = requestKey
         ? createHash("sha256")
@@ -281,6 +294,8 @@ export async function executeOperation(
       await audit(principal, operation, input, requestId, operation.status);
       return result;
     });
+    completed();
+    return result;
   } catch (error) {
     const failure =
       error instanceof z.ZodError
@@ -289,12 +304,17 @@ export async function executeOperation(
     await audit(principal, operation, input, requestId, failure.status).catch(
       () => {},
     );
-    if (failure.status >= 500)
-      console.error("Integration operation failed", {
-        requestId,
-        operation: operation.name,
-        status: failure.status,
-      });
+    logEvent({
+      service: "application",
+      level: failure.status >= 500 ? "error" : "warn",
+      action: operation.name,
+      message: "Integration operation rejected",
+      outcome: "failure",
+      status: failure.status,
+      errorType: failure.code,
+      durationNs: Number(process.hrtime.bigint() - started),
+      requestId,
+    });
     throw failure;
   }
 }
