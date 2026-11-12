@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 import { expect, test } from "vitest";
 
+import { guestReporterId } from "../lib/guest-reports";
+
 const connectionString = process.env.RLS_TEST_DATABASE_URL;
 
 test.skipIf(!connectionString)(
@@ -328,6 +330,36 @@ test.skipIf(!connectionString)(
           .sort()
           .map((user_id) => ({ user_id, standing: "1" })),
       );
+
+      // Even an accidental membership cannot open a restricted program to guests.
+      await client.query("RESET ROLE");
+      await client.query(
+        "INSERT INTO program_memberships VALUES ($1,$2,'researcher')",
+        [otherProgram, guestReporterId],
+      );
+      await client.query("SET LOCAL ROLE bossob_app");
+      const guestReport = randomUUID();
+      await actor(guestReporterId);
+      await client.query(submission, [
+        guestReport,
+        program,
+        guestReporterId,
+        scope,
+      ]);
+      await denied(submission, [
+        randomUUID(),
+        otherProgram,
+        guestReporterId,
+        otherScope,
+      ]);
+      await actor(peer);
+      expect(
+        await count("SELECT id FROM reports WHERE id=$1", [guestReport]),
+      ).toBe(0);
+      await actor(triager);
+      expect(
+        await count("SELECT id FROM reports WHERE id=$1", [guestReport]),
+      ).toBe(1);
     } finally {
       await client.query("ROLLBACK");
       await client.end();

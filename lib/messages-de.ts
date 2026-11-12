@@ -1,6 +1,15 @@
 export const german: Record<string, string> = {
   "Find vulnerabilities. Earn recognition.":
     "Sicherheitslücken finden. Anerkennung verdienen.",
+  "Anonymous guest": "Anonymer Gast",
+  Home: "Startseite",
+  "Report anonymously": "Anonym melden",
+  "Your report was sent to the program’s reviewers.":
+    "Deine Meldung wurde an das Prüfteam des Programms gesendet.",
+  "Guest reports are sent without an account and cannot be tracked or earn points. Leave identifying details out of the report.":
+    "Gastmeldungen werden ohne Konto gesendet. Du kannst ihren Status nicht verfolgen und erhältst keine Punkte. Verzichte in der Meldung auf Angaben, die dich identifizieren.",
+  "No programs are accepting guest reports.":
+    "Derzeit nimmt kein Programm Gastmeldungen an.",
   Settings: "Einstellungen",
   Appearance: "Darstellung",
   Breadcrumb: "Navigationspfad",

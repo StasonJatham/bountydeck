@@ -60,3 +60,9 @@ For log ingestion, see the [Elastic and OpenTelemetry guide](docs/logging.md).
 Use **Settings → Integrations** to find the REST and MCP endpoints and download Agent Skills. The [integration guide](docs/integrations.md) explains OAuth setup for user and automation identities.
 
 BountyDeck is available under the [GNU AGPL v3.0 only](LICENSE).
+
+### Anonymous guest reports
+
+Set `BOUNTYDECK_GUEST_REPORTS=true` in `.env`, run the database migrations, and recreate the application container. The landing page then links to **Report anonymously**. This lists published programs open to all that have at least one in-scope asset. Program names, rules, and in-scope asset names are visible without signing in.
+
+Guests can submit a report without giving an email address. Reviewers receive it in the normal triage inbox. Guests receive an on-screen confirmation and have no report history, replies, or points. All guests share a submission limit of ten reports per hour. Reverse proxies and hosting services may still record connection metadata.

@@ -3,6 +3,7 @@
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { guestReporterId, guestReportsEnabled } from "./guest-reports";
 import { requireActor } from "./actor";
 import {
   addComment,
@@ -37,6 +38,15 @@ export async function submitReport(programId: string, data: FormData) {
     createReport(actor, programId, Object.fromEntries(data)),
   );
   redirect(`/reports/${id}`);
+}
+
+export async function submitGuestReport(programId: string, data: FormData) {
+  if (!guestReportsEnabled() || !z.uuid().safeParse(programId).success)
+    notFound();
+  await runForm(`/guest-report/${programId}`, "invalid-report", () =>
+    createReport(guestReporterId, programId, Object.fromEntries(data)),
+  );
+  redirect("/guest-report?submitted=1");
 }
 
 export async function comment(reportId: string, data: FormData) {

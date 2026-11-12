@@ -14,9 +14,10 @@ import {
   rewards,
 } from "../../../../db/schema";
 import { requireActor } from "../../../../lib/actor";
-import { Field, input, panel, Text } from "../../../../lib/forms";
+import { panel } from "../../../../lib/forms";
 import { submitReport } from "../../../../lib/report-actions";
 import { severities } from "../../../../lib/workflow";
+import { ReportForm } from "../../../../components/report-form";
 
 export default async function Program({
   params,
@@ -168,61 +169,11 @@ export default async function Program({
         </p>
       )}
       {eligible && assets.length > 0 && (
-        <form
-          id="submit-report"
-          tabIndex={-1}
+        <ReportForm
           action={submitReport.bind(null, id)}
-          className={`${panel} grid scroll-mt-20 content-start gap-4 [&_textarea[name=proofOfConcept]]:font-mono [&_textarea[name=steps]]:font-mono`}
-        >
-          <h2 className="text-xl font-semibold">{t("Submit a report")}</h2>
-          {error && (
-            <p role="alert" className="text-sm text-danger">
-              {error === "rate-limit"
-                ? t("Submission limit reached. Try again later.")
-                : t("Check the report fields and try again.")}
-            </p>
-          )}
-          <Text name="title" label={t("Title")} />
-          <Field label={t("Affected asset")}>
-            <select className={input} name="assetId" required>
-              {assets.map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Text name="cwe" label={t("Weakness (e.g. CWE-200)")} max={9} />
-          <Field label={t("Proposed severity")}>
-            <select className={input} name="proposedSeverity">
-              {severities.map((severity) => (
-                <option key={severity} value={severity}>
-                  {t(severity)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Text
-            name="description"
-            label={t("Description")}
-            multiline
-            max={12000}
-          />
-          <Text
-            name="steps"
-            label={t("Reproduction steps")}
-            multiline
-            max={12000}
-          />
-          <Text
-            name="proofOfConcept"
-            label={t("Proof of concept")}
-            multiline
-            max={12000}
-          />
-          <Text name="impact" label={t("Impact")} multiline max={12000} />
-          <Button>{t("Submit report")}</Button>
-        </form>
+          assets={assets}
+          error={error}
+        />
       )}
     </div>
   );

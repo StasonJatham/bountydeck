@@ -11,6 +11,7 @@ import {
   programs,
   scoreEvents,
 } from "../../db/schema";
+import { guestProgramFilter, guestReporterId } from "../guest-reports";
 import { cvssScore } from "../cvss";
 import {
   canTransition,
@@ -101,7 +102,11 @@ export async function createReport(
       .select({ id: programs.id })
       .from(programs)
       .where(
-        and(eq(programs.id, programId), sql`app_can_submit(${programs.id})`),
+        and(
+          eq(programs.id, programId),
+          sql`app_can_submit(${programs.id})`,
+          actor === guestReporterId ? guestProgramFilter() : undefined,
+        ),
       );
     if (!program) throw unavailable();
     const [asset] = await tx
@@ -241,7 +246,11 @@ export async function transitionReport(
         updatedAt: new Date(),
       })
       .where(eq(reports.id, reportId));
-    if (target === "validated" && severity) {
+    if (
+      target === "validated" &&
+      severity &&
+      report.reporterId !== guestReporterId
+    ) {
       const [program] = await tx
         .select({ scoring: programs.scoring })
         .from(programs)

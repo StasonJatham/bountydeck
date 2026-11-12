@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Brand } from "../components/brand";
 import { LocaleControl } from "../components/locale-control";
 import { ThemeControl } from "../components/theme-control";
+import { guestReportsEnabled } from "../lib/guest-reports";
 import { getI18n } from "../lib/i18n";
 
 export default async function Home() {
@@ -31,6 +32,11 @@ export default async function Home() {
         >
           {t("Sign in")} <ArrowRight size={16} aria-hidden />
         </Link>
+        {guestReportsEnabled() && (
+          <Link className="mt-4 w-fit text-sm underline" href="/guest-report">
+            {t("Report anonymously")}
+          </Link>
+        )}
       </section>
     </main>
   );

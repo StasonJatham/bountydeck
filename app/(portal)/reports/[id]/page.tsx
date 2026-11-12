@@ -1,3 +1,4 @@
+import { guestReporterId } from "../../../../lib/guest-reports";
 import { ReportBadge } from "../../../../components/report-badge";
 import { getI18n } from "../../../../lib/i18n";
 import { Button } from "../../../../components/ui/button";
@@ -138,6 +139,9 @@ export default async function Report({
             level: t(report.severity ?? report.proposedSeverity),
           })}
         </ReportBadge>
+        {report.reporterId === guestReporterId && (
+          <span>{t("Anonymous guest")}</span>
+        )}
         {report.cvssScore !== null && (
           <span className="font-mono text-xs">
             CVSS {decimal(report.cvssScore)}

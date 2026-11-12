@@ -71,6 +71,13 @@
       "when": 1794475372009,
       "tag": "0009_integration_audit_context",
       "breakpoints": false
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794475372010,
+      "tag": "0010_guest_reports",
+      "breakpoints": false
     }
   ]
 }
