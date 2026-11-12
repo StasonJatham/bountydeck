@@ -216,10 +216,6 @@ test("guest can submit anonymously and analyst can validate without awarding poi
   browser,
   baseURL,
 }) => {
-  test.skip(
-    process.env.E2E_GUEST_REPORTS !== "1",
-    "Requires guest reports on the fixture app",
-  );
   await guest.goto("/");
   await guest.getByRole("link", { name: "Report anonymously" }).click();
   await expect(
@@ -374,10 +370,6 @@ test("SMTP and signed HTTPS notifications retry and record attempts", async ({
   browser,
   baseURL,
 }) => {
-  test.skip(
-    process.env.E2E_NOTIFICATION_FIXTURE !== "1",
-    "Requires the local notification fixture",
-  );
   const recipient = "browser-notification@example.invalid";
   const endpoint = "https://notify-fixture.bountydeck.test:8443/report";
   const manager = await login(browser, baseURL, "local-manager");

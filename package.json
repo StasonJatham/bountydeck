@@ -19,7 +19,9 @@
     "check:achievements": "node scripts/check-achievements.mjs",
     "prebuild": "npm run check:achievements",
     "pretest": "npm run check:achievements",
-    "achievements:reconcile": "tsx db/reconcile-achievements.ts"
+    "achievements:reconcile": "tsx db/reconcile-achievements.ts",
+    "test:unit": "vitest run --exclude \"db/*.test.ts\" --exclude \"**/*.integration.test.ts\" --exclude \"lib/integrations/reports.test.ts\"",
+    "pretest:unit": "npm run check:achievements"
   },
   "keywords": [],
   "author": "",
