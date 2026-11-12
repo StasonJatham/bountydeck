@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  background: #f6f6f5;
+  color: #171717;
+}
+a {
+  text-underline-offset: 0.25em;
+}
+a:hover {
+  text-decoration: underline;
+}
+button {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid #275ad6;
+  outline-offset: 4px;
+}
+
+.markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 0.375rem;
+  background: #f4f4f4;
+  padding: 0.75rem;
+  white-space: pre;
+}
+.markdown ul {
+  list-style: disc;
+  padding-inline-start: 1.25rem;
+}
+.markdown ol {
+  list-style: decimal;
+  padding-inline-start: 1.25rem;
+}

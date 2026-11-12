@@ -1,0 +1,11 @@
+services:
+  reverse-proxy:
+    environment:
+      CADDY_TLS: tls /run/secrets/tls_cert /run/secrets/tls_key
+    secrets: [tls_cert, tls_key]
+
+secrets:
+  tls_cert:
+    file: ./secrets/tls_cert.pem
+  tls_key:
+    file: ./secrets/tls_key.pem

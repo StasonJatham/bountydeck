@@ -1,0 +1,9 @@
+# Local integration testing only.
+services:
+  postgres:
+    networks: [database, test]
+    ports:
+      - "127.0.0.1:55432:5432"
+
+networks:
+  test:

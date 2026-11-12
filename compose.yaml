@@ -1,0 +1,177 @@
+x-bossob: &bossob
+  image: ${BOSSOB_IMAGE:-bossob:local}
+  build: .
+  security_opt: [no-new-privileges:true]
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:18.6-alpine@sha256:9ba53c7d41ea093baf5c1ba635ba5434c4f979880527d49bb7d9237d3193085b
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets:
+      - db_admin_password
+      - db_app_password
+      - db_migrate_password
+      - db_worker_password
+      - db_keycloak_password
+    networks: [database]
+    volumes:
+      - postgres:/var/lib/postgresql
+      - ./deploy/init-postgres.sh:/docker-entrypoint-initdb.d/10-bossob.sh:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-h",
+          "127.0.0.1",
+          "-U",
+          "postgres",
+          "-d",
+          "postgres",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  application:
+    <<: *bossob
+    restart: unless-stopped
+    environment:
+      AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
+      OIDC_ISSUER: ${OIDC_ISSUER:?Set OIDC_ISSUER}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bossob}
+      ATTACHMENTS_DIR: /var/lib/bossob/attachments
+      ATTACHMENT_TYPES: ${ATTACHMENT_TYPES:-image/png,text/plain}
+      APP_ORIGIN: ${AUTH_URL:?Set AUTH_URL}
+      WEBHOOK_DESTINATIONS: ${WEBHOOK_DESTINATIONS:-{}}
+    networks: [web, database]
+    secrets: [db_app_password, auth_secret, oidc_client_secret, internal_ca]
+    volumes:
+      - attachments:/var/lib/bossob/attachments
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    <<: *bossob
+    restart: unless-stopped
+    command: ["node", "--experimental-strip-types", "notifications/worker.ts"]
+    environment:
+      BOSSOB_SERVICE: worker
+      APP_ORIGIN: ${AUTH_URL:?Set AUTH_URL}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_ALLOW_PLAINTEXT: ${SMTP_ALLOW_PLAINTEXT:-false}
+      WEBHOOK_DESTINATIONS: ${WEBHOOK_DESTINATIONS:-{}}
+      NOTIFICATION_MAX_ATTEMPTS: ${NOTIFICATION_MAX_ATTEMPTS:-6}
+    networks: [worker, database]
+    secrets: [db_worker_password, smtp_url, internal_ca]
+
+  migrate:
+    <<: *bossob
+    profiles: [tools]
+    restart: "no"
+    command: ["node", "db/migrate.ts"]
+    environment:
+      BOSSOB_SERVICE: migrate
+    secrets: [db_migrate_password]
+    networks: [database]
+
+  reverse-proxy:
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:80:80"
+      - "${BIND_ADDRESS:-127.0.0.1}:443:443"
+    environment:
+      CADDY_SITE: ${CADDY_SITE:?Set CADDY_SITE}
+    networks:
+      web:
+        aliases: ["${APP_HOSTNAME:?Set APP_HOSTNAME}"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41
+    profiles: [keycloak]
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "/opt/keycloak/bossob-entrypoint.sh"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: bossob_keycloak
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /identity
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_MANAGEMENT_RELATIVE_PATH: /
+      KC_HTTP_MANAGEMENT_HOST: 127.0.0.1
+      KC_HOSTNAME: ${AUTH_URL:?Set AUTH_URL}/identity
+      KC_PROXY_HEADERS: xforwarded
+      KC_BOOTSTRAP_ADMIN_USERNAME: bossob-bootstrap
+      AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
+      KEYCLOAK_SSL_REQUIRED: ${KEYCLOAK_SSL_REQUIRED:-all}
+    networks: [web, database]
+    secrets: [db_keycloak_password, keycloak_admin_password, oidc_client_secret]
+    volumes:
+      - ./deploy/keycloak-entrypoint.sh:/opt/keycloak/bossob-entrypoint.sh:ro
+      - ./deploy/bossob-realm.json:/opt/keycloak/data/import/bossob-realm.json:ro
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          { printf 'HEAD /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&0; grep -q '^HTTP/1.1 200'; } 0<>/dev/tcp/127.0.0.1/9000
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  web:
+  worker:
+  database:
+    internal: true
+
+volumes:
+  postgres:
+  attachments:
+  caddy:
+
+secrets:
+  db_admin_password:
+    file: ./secrets/db_admin_password
+  db_app_password:
+    file: ./secrets/db_app_password
+  db_worker_password:
+    file: ./secrets/db_worker_password
+  db_migrate_password:
+    file: ./secrets/db_migrate_password
+  db_keycloak_password:
+    file: ./secrets/db_keycloak_password
+  keycloak_admin_password:
+    file: ./secrets/keycloak_admin_password
+  auth_secret:
+    file: ./secrets/auth_secret
+  oidc_client_secret:
+    file: ./secrets/oidc_client_secret
+  smtp_url:
+    file: ./secrets/smtp_url
+  internal_ca:
+    file: ./secrets/internal_ca.pem

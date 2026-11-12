@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794475372000,
+      "tag": "0000_base",
+      "breakpoints": false
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794475372001,
+      "tag": "0001_security",
+      "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794475372002,
+      "tag": "0002_notifications",
+      "breakpoints": false
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794475372003,
+      "tag": "0003_rankings",
+      "breakpoints": false
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794475372004,
+      "tag": "0004_researcher_progress",
+      "breakpoints": false
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794475372005,
+      "tag": "0005_scoring_defaults",
+      "breakpoints": false
+    }
+  ]
+}

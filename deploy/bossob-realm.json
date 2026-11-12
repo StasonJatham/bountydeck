@@ -1,0 +1,26 @@
+{
+  "realm": "bossob",
+  "displayName": "Bossob",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "sslRequired": "${KEYCLOAK_SSL_REQUIRED}",
+  "clients": [
+    {
+      "clientId": "bossob",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "secret": "${BOSSOB_OIDC_CLIENT_SECRET}",
+      "redirectUris": ["${AUTH_URL}/api/auth/callback/oidc"],
+      "webOrigins": ["${AUTH_URL}"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    }
+  ]
+}

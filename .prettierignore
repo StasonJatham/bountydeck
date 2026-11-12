@@ -1,0 +1,5 @@
+.next/
+package-lock.json
+db/migrations/
+test-results/
+playwright-report/

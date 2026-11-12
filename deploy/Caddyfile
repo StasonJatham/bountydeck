@@ -1,0 +1,17 @@
+{
+  auto_https disable_redirects
+  admin off
+  skip_install_trust
+}
+
+{$CADDY_SITE} {
+  {$CADDY_TLS}
+  @identity path /identity /identity/*
+  handle @identity {
+    reverse_proxy keycloak:8080
+  }
+
+  handle {
+    reverse_proxy application:3000
+  }
+}
