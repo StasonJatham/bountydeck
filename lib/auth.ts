@@ -1,3 +1,4 @@
+import { parseTheme, themeCookie } from "./theme";
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { readFileSync } from "node:fs";
@@ -15,7 +16,8 @@ declare module "next-auth" {
   }
 }
 
-export const { handlers, auth, signOut } = NextAuth(() => {
+export const { handlers, auth, signIn, signOut } = NextAuth((request) => {
+  const theme = parseTheme(request?.cookies.get(themeCookie)?.value);
   const issuer = process.env.OIDC_ISSUER;
   const provider = `oidc:${issuer}`;
   const adapter = DrizzleAdapter(db, {
@@ -34,6 +36,8 @@ export const { handlers, auth, signOut } = NextAuth(() => {
         adapter.unlinkAccount!({ ...account, provider }),
       getAccount: (subject) => adapter.getAccount!(subject, provider),
     },
+    pages: { signIn: "/sign-in", error: "/sign-in" },
+    theme: { colorScheme: theme === "system" ? "auto" : theme },
     secret: secret("AUTH_SECRET"),
     providers: [
       {

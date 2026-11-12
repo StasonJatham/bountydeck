@@ -75,8 +75,13 @@ export async function createOrganization(data: FormData) {
   redirect("/admin");
 }
 
-export async function setOrgRole(data: FormData) {
+export async function setOrgRole(
+  returnTo: "/admin" | "/organizations",
+  data: FormData,
+) {
   const actor = await requireActor();
+  const destination =
+    returnTo === "/organizations" ? "/organizations" : "/admin";
   const parsed = z
     .object({
       orgId: uuid,
@@ -85,7 +90,7 @@ export async function setOrgRole(data: FormData) {
       change: z.enum(["grant", "revoke"]),
     })
     .safeParse(Object.fromEntries(data));
-  if (!parsed.success) redirect("/admin?error=invalid");
+  if (!parsed.success) redirect(`${destination}?error=invalid`);
   const { orgId, userId, role, change } = parsed.data;
   await withActor(actor, async (tx) => {
     const { platform, admin } = (
@@ -116,15 +121,20 @@ export async function setOrgRole(data: FormData) {
       details: { userId, role },
     });
   });
-  redirect("/admin");
+  redirect(destination);
 }
 
-export async function createProgram(data: FormData) {
+export async function createProgram(
+  returnTo: "/admin" | "/organizations",
+  data: FormData,
+) {
   const actor = await requireActor();
+  const destination =
+    returnTo === "/organizations" ? "/organizations" : "/admin";
   const parsed = details
     .extend({ orgId: uuid })
     .safeParse(Object.fromEntries(data));
-  if (!parsed.success) redirect("/admin?error=invalid");
+  if (!parsed.success) redirect(`${destination}?error=invalid`);
   const id = await withActor(actor, async (tx) => {
     if (
       !(
@@ -139,7 +149,7 @@ export async function createProgram(data: FormData) {
       .values(parsed.data)
       .onConflictDoNothing()
       .returning({ id: programs.id });
-    if (!program) redirect("/admin?error=conflict");
+    if (!program) redirect(`${destination}?error=conflict`);
     await tx.insert(auditEvents).values({
       actorId: actor,
       orgId: parsed.data.orgId,
@@ -301,12 +311,17 @@ export async function addReward(id: string, data: FormData) {
   redirect(`/programs/${id}/manage`);
 }
 
-export async function updateOrganization(data: FormData) {
+export async function updateOrganization(
+  returnTo: "/admin" | "/organizations",
+  data: FormData,
+) {
   const actor = await requireActor();
+  const destination =
+    returnTo === "/organizations" ? "/organizations" : "/admin";
   const parsed = details
     .extend({ orgId: uuid })
     .safeParse(Object.fromEntries(data));
-  if (!parsed.success) redirect("/admin?error=invalid");
+  if (!parsed.success) redirect(`${destination}?error=invalid`);
   const { orgId, ...settings } = parsed.data;
   await withActor(actor, async (tx) => {
     const [organization] = await tx
@@ -324,7 +339,7 @@ export async function updateOrganization(data: FormData) {
       .insert(auditEvents)
       .values({ actorId: actor, orgId, kind: "organization.updated" });
   });
-  redirect("/admin");
+  redirect(destination);
 }
 
 export async function updateScope(

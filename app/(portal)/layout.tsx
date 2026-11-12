@@ -1,54 +1,123 @@
-import { sql } from "drizzle-orm";
-import { withActor } from "../../db";
-import { Shield } from "lucide-react";
-import Link from "next/link";
+import { and, count, eq, sql } from "drizzle-orm";
 import type { ReactNode } from "react";
+import { LocaleControl } from "../../components/locale-control";
+import {
+  PortalShell,
+  type NavigationItem,
+} from "../../components/portal-shell";
+import { ThemeControl } from "../../components/theme-control";
+import { withActor } from "../../db";
+import { orgUnits, programs, reports, users } from "../../db/schema";
 import { requireActor } from "../../lib/actor";
 import { signOut } from "../../lib/auth";
+import { getI18n } from "../../lib/i18n";
 
 export default async function Portal({ children }: { children: ReactNode }) {
   const actor = await requireActor();
-  const { administer } = await withActor(
+  const { t } = await getI18n();
+  const { access, organizations, user, attention } = await withActor(
     actor,
-    async (tx) =>
-      (
-        await tx.execute<{ administer: boolean }>(
-          sql`select app_platform_admin() or exists (select from org_units where app_org_admin(id)) as administer`,
-        )
-      ).rows[0],
+    async (tx) => {
+      const {
+        rows: [access],
+      } = await tx.execute<{
+        platform: boolean;
+        organization: boolean;
+        triage: boolean;
+      }>(sql`
+      select app_platform_admin() as platform,
+        exists (select from org_units where app_org_admin(id)) as organization,
+        exists (select from programs where app_reviews_program(id)) as triage
+    `);
+      const organizations = await tx
+        .selectDistinct({ id: orgUnits.id, name: orgUnits.name })
+        .from(orgUnits)
+        .innerJoin(programs, eq(programs.orgId, orgUnits.id))
+        .orderBy(orgUnits.name);
+      const [user] = await tx
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, actor));
+      const [attention] = await tx
+        .select({ total: count() })
+        .from(reports)
+        .where(
+          and(
+            eq(reports.reporterId, actor),
+            eq(reports.status, "needs_information"),
+          ),
+        );
+      return { access, organizations, user, attention: attention.total };
+    },
   );
+  const items: NavigationItem[] = [
+    { icon: "dashboard", href: "/dashboard", label: t("Dashboard") },
+    { icon: "programs", href: "/programs", label: t("Programs") },
+    { icon: "reports", href: "/reports", label: t("My reports") },
+    { icon: "leaderboard", href: "/leaderboard", label: t("Leaderboard") },
+    { icon: "profile", href: "/profile", label: t("Researcher profile") },
+  ];
+  if (access.triage)
+    items.push({
+      icon: "triage",
+      href: "/reports?view=inbox",
+      label: t("Triage inbox"),
+    });
+  if (access.platform)
+    items.push({ icon: "admin", href: "/admin", label: t("Administration") });
+  else if (access.organization)
+    items.push({
+      icon: "organizations",
+      href: "/organizations",
+      label: t("Organizations"),
+    });
+  items.push({ icon: "settings", href: "/settings", label: t("Settings") });
+
   return (
-    <>
-      <header className="border-b border-neutral-200 bg-white">
-        <nav
-          aria-label="Main navigation"
-          className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 text-sm"
-        >
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 font-semibold"
-          >
-            <Shield size={19} aria-hidden /> Bossob
-          </Link>
-          <Link href="/programs">Programs</Link>
-          <Link href="/reports">Reports</Link>
-          <Link href="/leaderboard">Leaderboard</Link>
-          <Link href="/profile">Profile</Link>
-          {administer && <Link href="/admin">Administration</Link>}
+    <PortalShell
+      items={items}
+      organizations={organizations}
+      user={user?.name ?? ""}
+      attention={attention}
+      theme={<ThemeControl />}
+      signOut={
+        <>
+          <div className="px-1.5 py-1">
+            <LocaleControl />
+          </div>
           <form
-            className="ml-auto"
             action={async () => {
               "use server";
               await signOut({ redirectTo: "/" });
             }}
           >
-            <button className="rounded-md border border-neutral-300 px-3 py-1.5">
-              Sign out
+            <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-subtle">
+              {t("Sign out")}
             </button>
           </form>
-        </nav>
-      </header>
-      <main className="mx-auto max-w-6xl px-5 py-10">{children}</main>
-    </>
+        </>
+      }
+      labels={{
+        navigation: t("Main navigation"),
+        breadcrumb: t("Breadcrumb"),
+        dashboard: t("Dashboard"),
+        organization: t("Organization"),
+        allOrganizations: t("All organizations"),
+        collapse: t("Collapse navigation"),
+        expand: t("Expand navigation"),
+        open: t("Open navigation"),
+        close: t("Close navigation"),
+        account: t("Account menu"),
+        profile: t("Profile"),
+        settings: t("Settings"),
+        notifications: t("Notifications"),
+        programDetails: t("Program details"),
+        programSettings: t("Program settings"),
+        reportDetails: t("Report details"),
+        skip: t("Skip to content"),
+      }}
+    >
+      {children}
+    </PortalShell>
   );
 }

@@ -4,9 +4,8 @@ import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 
 const variants = {
-  default: "bg-neutral-900 text-white hover:bg-neutral-800",
-  outline:
-    "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50",
+  default: "bg-action text-on-action hover:bg-action-hover",
+  outline: "border border-control bg-surface text-foreground hover:bg-subtle",
 };
 
 export function Button({

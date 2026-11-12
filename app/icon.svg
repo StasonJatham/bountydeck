@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">BountyDeck icon</title>
+  <path d="M27 82V32c0-9 6-15 15-15h43c9 0 15 6 15 15v10" fill="none" stroke="#A2A7B0" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="22" y="34" width="89" height="78" rx="16" fill="#FAFAF9" stroke="#111113" stroke-width="10"/>
+  <path d="M43 60h34M43 76h22" fill="none" stroke="#A2A7B0" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="88" cy="90" r="12" fill="#5265E8"/>
+  <circle cx="88" cy="90" r="5" fill="#FAFAF9"/>
+</svg>

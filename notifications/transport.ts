@@ -193,11 +193,11 @@ export function createDeliveryTransport(
         subject: "Bug bounty activity",
         messageId: `<${delivery.id}@${origin.hostname}>`,
         text: link
-          ? `Open the report in Bossob: ${link}`
-          : "Bossob notification test.",
+          ? `Open the report in BountyDeck: ${link}`
+          : "BountyDeck notification test.",
         html: link
-          ? `<p><a href="${link}">Open the report in Bossob</a></p>`
-          : "<p>Bossob notification test.</p>",
+          ? `<p><a href="${link}">Open the report in BountyDeck</a></p>`
+          : "<p>BountyDeck notification test.</p>",
         disableFileAccess: true,
         disableUrlAccess: true,
       });

@@ -82,6 +82,7 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   expect(
     await researcher.evaluate(() => document.documentElement.scrollWidth),
   ).toBe(390);
+  await researcher.evaluate(() => window.scrollTo(0, 0));
   await researcher.screenshot({
     path: info.outputPath("researcher-mobile.png"),
     fullPage: true,
@@ -142,9 +143,12 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
       exportPath,
     ),
   ).toBe(404);
+  await researcher.getByRole("button", { name: "Account menu" }).click();
   await researcher.getByRole("button", { name: "Sign out" }).click();
   await expect(
-    researcher.getByRole("heading", { name: "Internal bug bounty" }),
+    researcher.getByRole("heading", {
+      name: "Find vulnerabilities. Earn recognition.",
+    }),
   ).toBeVisible();
   await researcher.goto("/dashboard");
   await expect(
@@ -220,7 +224,7 @@ test("organization and program administration enforce role boundaries", async ({
   await expect(
     admin.getByText("organization.role_grant").first(),
   ).toBeVisible();
-  await manager.goto("/admin");
+  await manager.goto("/organizations");
   const createProgram = manager
     .locator("form")
     .filter({ has: manager.getByRole("heading", { name: "Create program" }) });
@@ -359,4 +363,212 @@ test("SMTP and signed HTTPS notifications retry and record attempts", async ({
     await expect(deliveries.getByText(result)).toBeVisible();
   }
   await Promise.all([manager.close(), researcher.close()]);
+});
+
+test("color theme follows the system and persists across sign-in and reload", async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+  const root = page.locator("html");
+  await expect(page).toHaveTitle(/BountyDeck/);
+  const favicon = page.locator('link[rel="icon"]').first();
+  await expect(favicon).toHaveAttribute("href", /icon/);
+  expect(
+    await favicon.evaluate(
+      async (element) => (await fetch((element as HTMLLinkElement).href)).ok,
+    ),
+  ).toBe(true);
+  const theme = page.getByRole("combobox", { name: "Color theme" });
+  await expect(theme).toHaveValue("system");
+  await expect(root).toHaveCSS("background-color", "rgb(20, 20, 22)");
+  await page.screenshot({
+    path: info.outputPath("landing-dark.png"),
+    fullPage: true,
+  });
+
+  await theme.selectOption("light");
+  await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
+  await page.reload();
+  await expect(theme).toHaveValue("light");
+  await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
+  await page.screenshot({
+    path: info.outputPath("landing-light.png"),
+    fullPage: true,
+  });
+
+  await theme.selectOption("dark");
+  await page.getByRole("link", { name: "Sign in" }).click();
+  await expect(root).toHaveAttribute("data-theme", "dark");
+  await page
+    .getByRole("button", { name: /sign in with company account/i })
+    .click();
+  await page.locator("#username").fill("local-researcher");
+  await page.locator("#password").fill(password());
+  await page.locator("#kc-login").click();
+
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(theme).toHaveValue("dark");
+  await expect(page.getByRole("banner")).toHaveCSS(
+    "background-color",
+    "rgb(30, 30, 34)",
+  );
+  await theme.selectOption("system");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
+});
+
+test("German and English persist, and only platform admins can open Administration", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Administration" })).toHaveCount(
+    0,
+  );
+  await page.getByRole("combobox", { name: "Language" }).selectOption("de");
+  await expect(page.locator("html")).toHaveAttribute("lang", "de");
+  await expect(
+    page.getByRole("heading", {
+      name: "Sicherheitslücken finden. Anerkennung verdienen.",
+    }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Sprache" })).toHaveValue(
+    "de",
+  );
+  await page.getByRole("link", { name: "Anmelden" }).click();
+  await page
+    .getByRole("button", { name: "Mit Unternehmenskonto anmelden" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Anmelden", exact: true }),
+  ).toBeVisible();
+  await page.locator("#username").fill("local-researcher");
+  await page.locator("#password").fill(password());
+  await page.locator("#kc-login").click();
+  await expect(page.getByRole("heading", { name: "Übersicht" })).toBeVisible();
+  const navigation = page.getByRole("navigation", { name: "Hauptnavigation" });
+  await expect(
+    navigation.getByRole("link", { name: "Verwaltung", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("link", { name: "Programme", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Programme" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Suchen" })).toBeVisible();
+  expect((await page.goto("/admin"))?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { name: "Seite nicht gefunden" }),
+  ).toBeVisible();
+  await page.goto("/dashboard");
+  await page.getByRole("button", { name: "Kontomenü" }).click();
+  await page.getByRole("combobox", { name: "Sprache" }).selectOption("en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+
+  const manager = await login(browser, baseURL, "local-manager");
+  await expect(
+    manager.getByRole("link", { name: "Administration" }),
+  ).toHaveCount(0);
+  await manager.getByRole("link", { name: "Organizations" }).click();
+  await expect(
+    manager.getByRole("heading", { name: "Organization management" }),
+  ).toBeVisible();
+  expect((await manager.goto("/admin"))?.status()).toBe(404);
+  const admin = await login(browser, baseURL, "local-platform-admin");
+  await admin.getByRole("button", { name: "Account menu" }).click();
+  await admin.getByRole("combobox", { name: "Language" }).selectOption("de");
+  await admin.getByRole("link", { name: "Verwaltung", exact: true }).click();
+  await expect(
+    admin.getByRole("heading", { name: "Verwaltung", exact: true }),
+  ).toBeVisible();
+  await expect(
+    admin.getByRole("button", { name: "Organisation erstellen" }),
+  ).toBeVisible();
+  await Promise.all([manager.close(), admin.close()]);
+});
+
+test("responsive navigation is keyboard accessible and role-aware", async ({
+  browser,
+  baseURL,
+}, info) => {
+  const reviewer = await login(browser, baseURL, "local-triager");
+  const sidebar = reviewer.getByRole("navigation", { name: "Main navigation" });
+  const collapse = reviewer.getByRole("button", {
+    name: "Collapse navigation",
+  });
+  const expand = reviewer.getByRole("button", { name: "Expand navigation" });
+  await expect(sidebar.getByRole("link", { name: "My reports" })).toBeVisible();
+  await expect(
+    sidebar.getByRole("link", { name: "Triage inbox" }),
+  ).toBeVisible();
+  await expect(
+    sidebar.getByRole("link", { name: "Administration" }),
+  ).toHaveCount(0);
+  await reviewer.screenshot({
+    path: info.outputPath("dashboard-desktop.png"),
+    fullPage: true,
+  });
+
+  await collapse.click();
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    sidebar.getByRole("link", { name: "Triage inbox" }),
+  ).toBeVisible();
+  await expand.click();
+  await expect(collapse).toHaveAttribute("aria-expanded", "true");
+
+  const organization = sidebar.getByRole("combobox", { name: "Organization" });
+  await organization.selectOption({ label: "Application Security" });
+  await expect(reviewer).toHaveURL(
+    /\/programs\?organization=00000000-0000-4000-8000-000000000001$/,
+  );
+  await expect(organization).toHaveValue(
+    "00000000-0000-4000-8000-000000000001",
+  );
+
+  await sidebar.getByRole("link", { name: "Leaderboard" }).click();
+  await expect(
+    reviewer.getByRole("heading", { name: "Leaderboard" }),
+  ).toBeVisible();
+  await reviewer.screenshot({
+    path: info.outputPath("leaderboard-desktop.png"),
+    fullPage: true,
+  });
+
+  const researcher = await login(browser, baseURL, "local-researcher", true);
+  const open = researcher.getByRole("button", { name: "Open navigation" });
+  const drawer = researcher.getByRole("dialog", {
+    name: /^(main )?navigation$/i,
+  });
+  await expect(drawer).toBeHidden();
+  await open.focus();
+  await researcher.keyboard.press("Enter");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.locator(":focus")).toHaveCount(1);
+  await expect(drawer.getByRole("link", { name: "My reports" })).toBeVisible();
+  await expect(drawer.getByRole("link", { name: "Triage inbox" })).toHaveCount(
+    0,
+  );
+  await expect(
+    drawer.getByRole("link", { name: "Administration" }),
+  ).toHaveCount(0);
+  await researcher.screenshot({
+    path: info.outputPath("navigation-mobile.png"),
+  });
+
+  await researcher.keyboard.press("Escape");
+  await expect(drawer).toBeHidden();
+  await expect(open).toBeFocused();
+  await open.click();
+  await drawer.getByRole("link", { name: "My reports" }).click();
+  await expect(drawer).toBeHidden();
+  await expect(
+    researcher.getByRole("heading", { name: "My reports" }),
+  ).toBeVisible();
+  expect(
+    await researcher.evaluate(() => document.documentElement.scrollWidth),
+  ).toBe(390);
+
+  await Promise.all([reviewer.close(), researcher.close()]);
 });

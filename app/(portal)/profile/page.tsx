@@ -1,3 +1,4 @@
+import { getI18n } from "../../../lib/i18n";
 import { Button } from "../../../components/ui/button";
 import { getResearcherProgress } from "../../../db/progress";
 import { desc, eq } from "drizzle-orm";
@@ -8,6 +9,7 @@ import { Field, input, panel } from "../../../lib/forms";
 import { updateProfile } from "../../../lib/profile-actions";
 
 export default async function Profile() {
+  const { t, date, number } = await getI18n();
   const actor = await requireActor();
   const { profile, ledger } = await withActor(actor, async (tx) => {
     const [profile] = await tx.select().from(users).where(eq(users.id, actor));
@@ -23,37 +25,39 @@ export default async function Profile() {
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">
-        Researcher profile
+        {t("Researcher profile")}
       </h1>
       <div className="mt-6 grid items-start gap-4 md:grid-cols-2">
         <section className={panel}>
-          <h2 className="font-semibold">Achievements</h2>
+          <h2 className="font-semibold">{t("Achievements")}</h2>
           <p className="mt-2 text-sm">
-            {progress.points} points · {progress.validated} validated findings
+            {number(progress.points)} {t("points ·")}{" "}
+            {number(progress.validated)} {t("validated findings")}
           </p>
           {progress.achievements.length > 0 ? (
             <ul className="mt-3 flex flex-wrap gap-2">
               {progress.achievements.map((achievement) => (
                 <li
-                  className="rounded-full bg-neutral-100 px-3 py-1 text-sm"
-                  key={achievement}
+                  className="rounded-full bg-subtle px-3 py-1 text-sm"
+                  key={t(achievement)}
                 >
-                  {achievement}
+                  {t(achievement)}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-neutral-600">
-              No achievements earned yet.
+            <p className="mt-3 text-sm text-muted">
+              {t("No achievements earned yet.")}
             </p>
           )}
         </section>
         <section className={panel}>
-          <h2 className="font-semibold">Program recognition</h2>
+          <h2 className="font-semibold">{t("Program recognition")}</h2>
           <ul className="mt-2 space-y-3 text-sm">
             {progress.programs.map((program) => (
               <li key={program.program_id}>
-                <strong>{program.name}</strong> · {program.points} points
+                <strong className="font-mono">{program.name}</strong> ·{" "}
+                {number(program.points)} {t("points")}
                 {program.earned_rewards.length > 0 && (
                   <p>{program.earned_rewards.join(", ")}</p>
                 )}
@@ -61,33 +65,36 @@ export default async function Profile() {
             ))}
           </ul>
           {!progress.programs.length && (
-            <p className="mt-2 text-sm">No program activity yet.</p>
+            <p className="mt-2 text-sm">{t("No program activity yet.")}</p>
           )}
         </section>
         <section className={panel}>
-          <h2 className="font-semibold">Season history</h2>
+          <h2 className="font-semibold">{t("Season history")}</h2>
           <ul className="mt-2 space-y-2 text-sm">
             {progress.seasons.map((season) => (
               <li
                 key={`${season.period}-${season.starts_at.toISOString()}`}
                 className="capitalize"
               >
-                {season.period} starting{" "}
-                {season.starts_at.toISOString().slice(0, 10)} · {season.points}{" "}
-                points{season.standing && ` · Rank ${season.standing}`}
+                {t(season.period)} {t("starting")} {date(season.starts_at)} ·{" "}
+                {number(season.points)} {t("points")}
+                {season.standing &&
+                  t(" · Rank {rank}", { rank: number(season.standing) })}
               </li>
             ))}
           </ul>
           {!progress.seasons.length && (
-            <p className="mt-2 text-sm">No seasonal activity yet.</p>
+            <p className="mt-2 text-sm">{t("No seasonal activity yet.")}</p>
           )}
         </section>
         <form className={`${panel} grid gap-4`} action={updateProfile}>
           <h2 className="font-semibold">
-            {profile.name ?? "Profile settings"}
+            {profile.name ?? t("Profile settings")}
           </h2>
-          <p className="break-all text-sm text-neutral-600">User ID {actor}</p>
-          <Field label="Leaderboard pseudonym">
+          <p className="break-all text-sm text-muted">
+            {t("User ID")} <span className="font-mono text-xs">{actor}</span>
+          </p>
+          <Field label={t("Leaderboard pseudonym")}>
             <input
               name="pseudonym"
               className={input}
@@ -101,28 +108,30 @@ export default async function Profile() {
               name="leaderboardVisible"
               defaultChecked={profile.leaderboardVisible}
             />{" "}
-            Show my ranking to other eligible researchers
+            {t("Show my ranking to other eligible researchers")}
           </label>
-          <Button>Save profile</Button>
+          <Button>{t("Save profile")}</Button>
         </form>
         <section className={panel}>
-          <h2 className="font-semibold">Recent points activity</h2>
-          <ul className="mt-2 divide-y divide-neutral-200">
+          <h2 className="font-semibold">{t("Recent points activity")}</h2>
+          <ul className="mt-2 divide-y divide-line">
             {ledger.map((event) => (
               <li
                 className="flex justify-between gap-4 py-2 text-sm"
                 key={event.id}
               >
-                <span>{event.reason}</span>
-                <strong>
+                <span>
+                  {event.kind === "award" ? t(event.reason) : event.reason}
+                </span>
+                <strong className="font-mono">
                   {event.points > 0 ? "+" : ""}
-                  {event.points}
+                  {number(event.points)}
                 </strong>
               </li>
             ))}
           </ul>
           {!ledger.length && (
-            <p className="mt-2 text-sm">No points awarded yet.</p>
+            <p className="mt-2 text-sm">{t("No points awarded yet.")}</p>
           )}
         </section>
       </div>

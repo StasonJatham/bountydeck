@@ -1,3 +1,4 @@
+import { getI18n } from "../../../../../../lib/i18n";
 import { Button } from "../../../../../../components/ui/button";
 import Link from "next/link";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
@@ -25,6 +26,7 @@ export default async function Notifications({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
+  const { t, dateTime, number } = await getI18n();
   const actor = await requireActor();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
@@ -67,23 +69,20 @@ export default async function Notifications({
   const status = await searchParams;
   return (
     <>
-      <Link
-        className="text-sm text-neutral-600"
-        href={`/programs/${id}/manage`}
-      >
-        ← Program settings
+      <Link className="text-sm text-muted" href={`/programs/${id}/manage`}>
+        {t("← Program settings")}
       </Link>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-        Notifications
+        {t("Notifications")}
       </h1>
       {status.error && (
-        <p role="alert" className="mt-4 text-red-800">
-          Check the channel settings or delivery state.
+        <p role="alert" className="mt-4 text-danger">
+          {t("Check the channel settings or delivery state.")}
         </p>
       )}
       {status.saved && (
         <p role="status" className="mt-4">
-          Change saved.
+          {t("Change saved.")}
         </p>
       )}
       <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
@@ -91,19 +90,19 @@ export default async function Notifications({
           className={`${panel} grid gap-4`}
           action={addNotification.bind(null, id)}
         >
-          <h2 className="font-semibold">Add channel</h2>
-          <Field label="Transport">
+          <h2 className="font-semibold">{t("Add channel")}</h2>
+          <Field label={t("Transport")}>
             <select className={input} name="kind">
-              <option value="smtp">Email</option>
-              <option value="webhook">HTTPS webhook</option>
+              <option value="smtp">{t("Email")}</option>
+              <option value="webhook">{t("HTTPS webhook")}</option>
             </select>
           </Field>
           <Text
             name="destination"
-            label="Email address or webhook URL"
+            label={t("Email address or webhook URL")}
             max={2048}
           />
-          <Field label="Webhook signing secret (minimum 32 characters)">
+          <Field label={t("Webhook signing secret (minimum 32 characters)")}>
             <input
               name="signingSecret"
               type="password"
@@ -112,7 +111,7 @@ export default async function Notifications({
             />
           </Field>
           <fieldset className="grid gap-2">
-            <legend className="mb-2 text-sm font-medium">Events</legend>
+            <legend className="mb-2 text-sm font-medium">{t("Events")}</legend>
             {notificationEvents.map((event) => (
               <label className="flex gap-2 text-sm" key={event}>
                 <input
@@ -121,34 +120,35 @@ export default async function Notifications({
                   value={event}
                   defaultChecked={event === "report.submitted"}
                 />
-                {event.replace("report.", "").replaceAll("_", " ")}
+                {t(event.replace("report.", "").replaceAll("_", " "))}
               </label>
             ))}
           </fieldset>
           <fieldset className="grid grid-cols-2 gap-2">
             <legend className="mb-2 text-sm font-medium">
-              Severity filters (empty means all)
+              {t("Severity filters (empty means all)")}
             </legend>
             {["pending", "none", "low", "medium", "high", "critical"].map(
               (level) => (
                 <label className="flex gap-2 text-sm capitalize" key={level}>
                   <input type="checkbox" name="severities" value={level} />
-                  {level}
+                  {t(level)}
                 </label>
               ),
             )}
           </fieldset>
-          <Button>Add channel</Button>
+          <Button>{t("Add channel")}</Button>
         </form>
         <div className="grid gap-4">
           <section className={panel}>
-            <h2 className="font-semibold">Channels</h2>
-            <ul className="mt-2 divide-y divide-neutral-200">
+            <h2 className="font-semibold">{t("Channels")}</h2>
+            <ul className="mt-2 divide-y divide-line">
               {channels.map((channel) => (
                 <li className="py-3 text-sm" key={channel.id}>
                   <p className="break-all">{channel.destination}</p>
-                  <p className="text-neutral-600">
-                    {channel.kind} · {channel.enabled ? "Enabled" : "Disabled"}
+                  <p className="text-muted">
+                    {t(channel.kind)} ·{" "}
+                    {channel.enabled ? t("Enabled") : t("Disabled")}
                   </p>
                   <form
                     action={notificationOperation.bind(null, id, channel.id)}
@@ -160,7 +160,7 @@ export default async function Notifications({
                         name="operation"
                         value="test"
                       >
-                        Send test
+                        {t("Send test")}
                       </button>
                     )}
                     <button
@@ -168,32 +168,33 @@ export default async function Notifications({
                       name="operation"
                       value={channel.enabled ? "disable" : "enable"}
                     >
-                      {channel.enabled ? "Disable" : "Enable"}
+                      {channel.enabled ? t("Disable") : t("Enable")}
                     </button>
                   </form>
                 </li>
               ))}
             </ul>
             {!channels.length && (
-              <p className="mt-2 text-sm">No channels configured.</p>
+              <p className="mt-2 text-sm">{t("No channels configured.")}</p>
             )}
           </section>
           <section className={panel}>
-            <h2 className="font-semibold">Delivery history</h2>
-            <ul className="mt-2 divide-y divide-neutral-200">
+            <h2 className="font-semibold">{t("Delivery history")}</h2>
+            <ul className="mt-2 divide-y divide-line">
               {history.map((item) => (
                 <li
                   className="flex flex-wrap justify-between gap-2 py-3 text-sm"
                   key={item.id}
                 >
                   <span>
-                    {item.eventType} · {item.status} · {item.attempts} attempts
+                    {t(item.eventType)} · {t(item.status)} ·{" "}
+                    {number(item.attempts)} {t("attempts")}
                     {item.publicReportId && ` · ${item.publicReportId}`}
                   </span>
                   {item.attempts > 0 && (
                     <details className="basis-full">
-                      <summary className="cursor-pointer text-neutral-600">
-                        Attempts
+                      <summary className="cursor-pointer text-muted">
+                        {t("Attempts")}
                       </summary>
                       <ul className="mt-1 space-y-1 pl-4">
                         {attempts
@@ -201,16 +202,12 @@ export default async function Notifications({
                           .map((attempt) => (
                             <li key={attempt.id}>
                               {attempt.attempt}.{" "}
-                              {attempt.result.replaceAll("_", " ")}{" "}
+                              {t(attempt.result.replaceAll("_", " "))}{" "}
                               <time
-                                className="ml-2 text-neutral-600"
+                                className="ml-2 text-muted"
                                 dateTime={attempt.createdAt.toISOString()}
                               >
-                                {attempt.createdAt
-                                  .toISOString()
-                                  .slice(0, 16)
-                                  .replace("T", " ")}{" "}
-                                UTC
+                                {dateTime(attempt.createdAt)} UTC
                               </time>
                             </li>
                           ))}
@@ -226,7 +223,7 @@ export default async function Notifications({
                         name="operation"
                         value="retry"
                       >
-                        Retry
+                        {t("Retry")}
                       </button>
                     </form>
                   )}
@@ -234,7 +231,7 @@ export default async function Notifications({
               ))}
             </ul>
             {!history.length && (
-              <p className="mt-2 text-sm">No deliveries yet.</p>
+              <p className="mt-2 text-sm">{t("No deliveries yet.")}</p>
             )}
           </section>
         </div>

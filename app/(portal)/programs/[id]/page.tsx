@@ -1,3 +1,5 @@
+import { ReportBadge } from "../../../../components/report-badge";
+import { getI18n } from "../../../../lib/i18n";
 import { Button } from "../../../../components/ui/button";
 import { joinProgram } from "../../../../lib/management";
 import Link from "next/link";
@@ -23,6 +25,7 @@ export default async function Program({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const { t, number } = await getI18n();
   const actor = await requireActor();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
@@ -61,36 +64,52 @@ export default async function Program({
   const error = (await searchParams).error;
   const assets = scope.filter((asset) => asset.inScope);
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid items-start gap-6 lg:grid-cols-2">
       <div className="grid content-start gap-4">
         {manages && (
           <Link
             className="w-fit text-sm font-medium"
             href={`/programs/${id}/manage`}
           >
-            Manage program →
+            {t("Manage program →")}
           </Link>
         )}
         <div>
-          <p className="text-sm capitalize text-neutral-600">
-            {program.status}
-          </p>
+          <ReportBadge status={program.status}>{t(program.status)}</ReportBadge>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             {program.name}
           </h1>
-          <p className="mt-3 whitespace-pre-wrap">{program.description}</p>
+          <p className="mt-3 whitespace-pre-wrap text-secondary">
+            {program.description}
+          </p>
         </div>
-        {eligible && !joined && (
-          <form action={joinProgram.bind(null, id)}>
-            <Button>Join program</Button>
-          </form>
+        {eligible && (assets.length > 0 || !joined) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {assets.length > 0 && (
+              <a
+                className="rounded-md bg-action px-4 py-2 text-sm font-medium text-on-action hover:bg-action-hover hover:no-underline lg:hidden"
+                href="#submit-report"
+              >
+                {t("Submit a report")}
+              </a>
+            )}
+            {!joined && (
+              <form action={joinProgram.bind(null, id)}>
+                <Button variant="outline">{t("Join program")}</Button>
+              </form>
+            )}
+          </div>
         )}
         <section className={panel}>
-          <h2 className="font-semibold">Points and rewards</h2>
+          <h2 className="font-semibold">{t("Points and rewards")}</h2>
           <ul className="mt-2 grid grid-cols-2 gap-2 text-sm">
             {severities.map((severity) => (
               <li className="capitalize" key={severity}>
-                {severity} · {program.scoring[severity] ?? 0} points
+                {t(severity)} ·{" "}
+                <span className="font-mono text-xs">
+                  {number(program.scoring[severity] ?? 0)}
+                </span>{" "}
+                {t("points")}
               </li>
             ))}
           </ul>
@@ -98,7 +117,8 @@ export default async function Program({
             <ul className="mt-4 space-y-2 text-sm">
               {offers.map((reward) => (
                 <li key={reward.id}>
-                  <strong>{reward.name}</strong> · {reward.minimumPoints} points
+                  <strong>{reward.name}</strong> ·{" "}
+                  {number(reward.minimumPoints)} {t("points")}
                   <p>{reward.description}</p>
                 </li>
               ))}
@@ -108,56 +128,62 @@ export default async function Program({
             className="mt-4 inline-block text-sm underline"
             href={`/leaderboard?scope=program:${id}`}
           >
-            Program leaderboard
+            {t("Program leaderboard")}
           </Link>
         </section>
         <section className={panel}>
-          <h2 className="font-semibold">Scope</h2>
+          <h2 className="font-semibold">{t("Scope")}</h2>
           <ul className="mt-3 space-y-3">
             {scope.map((asset) => (
               <li key={asset.id}>
-                <strong>{asset.name}</strong>
-                <span className="ml-2 text-sm text-neutral-600">
-                  {asset.inScope ? "In scope" : "Out of scope"}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="break-words">{asset.name}</strong>
+                  <ReportBadge status={asset.inScope ? "published" : undefined}>
+                    {asset.inScope ? t("In scope") : t("Out of scope")}
+                  </ReportBadge>
+                </div>
                 <p>{asset.description}</p>
               </li>
             ))}
           </ul>
-          {!scope.length && <p className="mt-2 text-sm">No assets defined.</p>}
+          {!scope.length && (
+            <p className="mt-2 text-sm">{t("No assets defined.")}</p>
+          )}
         </section>
         <section className={panel}>
-          <h2 className="font-semibold">Testing rules</h2>
+          <h2 className="font-semibold">{t("Testing rules")}</h2>
           <p className="mt-2 whitespace-pre-wrap">{program.rules}</p>
-          <h2 className="mt-5 font-semibold">Disclosure policy</h2>
+          <h2 className="mt-5 font-semibold">{t("Disclosure policy")}</h2>
           <p className="mt-2 whitespace-pre-wrap">{program.disclosurePolicy}</p>
         </section>
       </div>
       {!eligible && (
-        <p className="text-sm text-neutral-600">
-          This program isn’t accepting submissions from your account.
+        <p className="text-sm text-muted">
+          {t("This program isn’t accepting submissions from your account.")}
         </p>
       )}
       {eligible && assets.length === 0 && (
-        <p className="text-sm text-neutral-600">
-          This program has no in-scope assets yet.
+        <p className="text-sm text-muted">
+          {t("This program has no in-scope assets yet.")}
         </p>
       )}
       {eligible && assets.length > 0 && (
         <form
+          id="submit-report"
+          tabIndex={-1}
           action={submitReport.bind(null, id)}
-          className={`${panel} grid content-start gap-4`}
+          className={`${panel} grid scroll-mt-20 content-start gap-4 [&_textarea[name=proofOfConcept]]:font-mono [&_textarea[name=steps]]:font-mono`}
         >
-          <h2 className="text-xl font-semibold">Submit a report</h2>
+          <h2 className="text-xl font-semibold">{t("Submit a report")}</h2>
           {error && (
-            <p role="alert" className="text-sm text-red-800">
+            <p role="alert" className="text-sm text-danger">
               {error === "rate-limit"
-                ? "Submission limit reached. Try again later."
-                : "Check the report fields and try again."}
+                ? t("Submission limit reached. Try again later.")
+                : t("Check the report fields and try again.")}
             </p>
           )}
-          <Text name="title" label="Title" />
-          <Field label="Affected asset">
+          <Text name="title" label={t("Title")} />
+          <Field label={t("Affected asset")}>
             <select className={input} name="assetId" required>
               {assets.map((asset) => (
                 <option key={asset.id} value={asset.id}>
@@ -166,24 +192,36 @@ export default async function Program({
               ))}
             </select>
           </Field>
-          <Text name="cwe" label="Weakness (e.g. CWE-200)" max={9} />
-          <Field label="Proposed severity">
+          <Text name="cwe" label={t("Weakness (e.g. CWE-200)")} max={9} />
+          <Field label={t("Proposed severity")}>
             <select className={input} name="proposedSeverity">
               {severities.map((severity) => (
-                <option key={severity}>{severity}</option>
+                <option key={severity} value={severity}>
+                  {t(severity)}
+                </option>
               ))}
             </select>
           </Field>
-          <Text name="description" label="Description" multiline max={12000} />
-          <Text name="steps" label="Reproduction steps" multiline max={12000} />
           <Text
-            name="proofOfConcept"
-            label="Proof of concept"
+            name="description"
+            label={t("Description")}
             multiline
             max={12000}
           />
-          <Text name="impact" label="Impact" multiline max={12000} />
-          <Button>Submit report</Button>
+          <Text
+            name="steps"
+            label={t("Reproduction steps")}
+            multiline
+            max={12000}
+          />
+          <Text
+            name="proofOfConcept"
+            label={t("Proof of concept")}
+            multiline
+            max={12000}
+          />
+          <Text name="impact" label={t("Impact")} multiline max={12000} />
+          <Button>{t("Submit report")}</Button>
         </form>
       )}
     </div>

@@ -1,7 +1,10 @@
 {
   "realm": "bossob",
-  "displayName": "Bossob",
+  "displayName": "BountyDeck",
   "enabled": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en", "de"],
+  "defaultLocale": "en",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,

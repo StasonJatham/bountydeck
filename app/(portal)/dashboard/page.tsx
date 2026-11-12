@@ -1,3 +1,5 @@
+import { getI18n } from "../../../lib/i18n";
+import { ReportBadge } from "../../../components/report-badge";
 import Link from "next/link";
 import { ArrowUpRight, FileText, Medal, Trophy } from "lucide-react";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -8,6 +10,7 @@ import { requireActor } from "../../../lib/actor";
 import { panel } from "../../../lib/forms";
 
 export default async function Dashboard() {
+  const { t, number } = await getI18n();
   const actor = await requireActor();
   const [progress, { recent, available }] = await Promise.all([
     getResearcherProgress(actor),
@@ -46,34 +49,42 @@ export default async function Dashboard() {
   const metrics = [
     {
       label: "Total points",
-      value: progress.points,
+      value: number(progress.points),
       Icon: Medal,
       href: "/profile",
     },
     {
       label: "Validated findings",
-      value: progress.validated,
+      value: number(progress.validated),
       Icon: FileText,
       href: "/reports",
     },
     {
       label: "Quarterly rank",
-      value: standing ? `#${standing}` : "Unranked",
+      value: standing ? `#${number(standing)}` : t("Unranked"),
       Icon: Trophy,
       href: "/leaderboard?period=quarter",
     },
   ];
   return (
     <div className="space-y-7">
-      <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">
+        {t("Dashboard")}
+      </h1>
       <div className="grid gap-3 sm:grid-cols-3">
         {metrics.map(({ label, value, Icon, href }) => (
-          <Link key={label} className={`${panel} group block`} href={href}>
-            <div className="flex items-center justify-between gap-3 text-sm text-neutral-600">
-              <span>{label}</span>
-              <Icon aria-hidden size={17} />
+          <Link
+            key={label}
+            className={`${panel} block transition-colors hover:border-accent/40 hover:no-underline`}
+            href={href}
+          >
+            <div className="flex items-center justify-between gap-3 text-sm text-muted">
+              <span>{t(label)}</span>
+              <span className="rounded-md bg-accent/10 p-1.5 text-accent">
+                <Icon aria-hidden size={16} />
+              </span>
             </div>
-            <strong className="mt-3 block text-3xl tracking-tight">
+            <strong className="mt-2 block font-mono text-3xl font-medium tracking-tight">
               {value}
             </strong>
           </Link>
@@ -82,12 +93,12 @@ export default async function Dashboard() {
       <div className="grid items-start gap-4 lg:grid-cols-[3fr_2fr]">
         <section className={panel}>
           <header className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Recent reports</h2>
+            <h2 className="text-lg font-semibold">{t("Recent reports")}</h2>
             <Link className="flex items-center gap-1 text-sm" href="/reports">
-              All reports <ArrowUpRight size={14} aria-hidden />
+              {t("All reports")} <ArrowUpRight size={14} aria-hidden />
             </Link>
           </header>
-          <ul className="mt-3 divide-y divide-neutral-200">
+          <ul className="mt-3 divide-y divide-line">
             {recent.map((report) => (
               <li key={report.id}>
                 <Link
@@ -95,32 +106,32 @@ export default async function Dashboard() {
                   href={`/reports/${report.id}`}
                 >
                   <span className="min-w-0 break-words">
-                    <span className="mr-2 text-neutral-600">
+                    <span className="mr-2 whitespace-nowrap font-mono text-xs text-muted">
                       BSO-{report.number}
                     </span>
                     {report.title}
                   </span>
-                  <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs capitalize">
-                    {report.status.replaceAll("_", " ")}
-                  </span>
+                  <ReportBadge status={report.status}>
+                    {t(report.status.replaceAll("_", " "))}
+                  </ReportBadge>
                 </Link>
               </li>
             ))}
           </ul>
           {!recent.length && (
-            <p className="mt-3 text-sm text-neutral-600">
-              You haven’t submitted a report yet.
+            <p className="mt-3 text-sm text-muted">
+              {t("You haven’t submitted a report yet.")}
             </p>
           )}
         </section>
         <section className={panel}>
           <header className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Available programs</h2>
+            <h2 className="text-lg font-semibold">{t("Available programs")}</h2>
             <Link className="flex items-center gap-1 text-sm" href="/programs">
-              Browse <ArrowUpRight size={14} aria-hidden />
+              {t("Browse")} <ArrowUpRight size={14} aria-hidden />
             </Link>
           </header>
-          <ul className="mt-3 divide-y divide-neutral-200">
+          <ul className="mt-3 divide-y divide-line">
             {available.map((program) => (
               <li key={program.id} className="py-3">
                 <Link
@@ -129,35 +140,35 @@ export default async function Dashboard() {
                 >
                   {program.name}
                 </Link>
-                <p className="mt-1 line-clamp-2 text-sm text-neutral-600">
+                <p className="mt-1 line-clamp-2 text-sm text-muted">
                   {program.description}
                 </p>
               </li>
             ))}
           </ul>
           {!available.length && (
-            <p className="mt-3 text-sm text-neutral-600">
-              There are no open programs for your account.
+            <p className="mt-3 text-sm text-muted">
+              {t("There are no open programs for your account.")}
             </p>
           )}
         </section>
       </div>
       <section className={panel}>
-        <h2 className="text-lg font-semibold">Achievements</h2>
+        <h2 className="text-lg font-semibold">{t("Achievements")}</h2>
         {progress.achievements.length > 0 ? (
           <ul className="mt-3 flex flex-wrap gap-2">
             {progress.achievements.map((achievement) => (
               <li
-                className="rounded-full bg-neutral-100 px-3 py-1 text-sm"
-                key={achievement}
+                className="rounded-full bg-subtle px-3 py-1 text-sm"
+                key={t(achievement)}
               >
-                {achievement}
+                {t(achievement)}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-2 text-sm text-neutral-600">
-            Your first validated finding unlocks an achievement.
+          <p className="mt-2 text-sm text-muted">
+            {t("Your first validated finding unlocks an achievement.")}
           </p>
         )}
       </section>

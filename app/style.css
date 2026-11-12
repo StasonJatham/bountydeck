@@ -1,11 +1,60 @@
 @import "tailwindcss";
 
-:root {
-  color-scheme: light;
-  font-family: system-ui, sans-serif;
-  background: #f6f6f5;
-  color: #171717;
+@theme inline {
+  --font-sans: var(--geist-sans), system-ui, sans-serif;
+  --font-mono: var(--geist-mono), ui-monospace, monospace;
+  --color-background: var(--background);
+  --color-canvas: var(--background);
+  --color-surface: var(--card);
+  --color-subtle: var(--muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted-foreground);
+  --color-secondary: var(--secondary-foreground);
+  --color-line: var(--border);
+  --color-control: var(--input);
+  --color-action: var(--primary);
+  --color-action-hover: var(--primary-hover);
+  --color-on-action: var(--primary-foreground);
+  --color-focus: var(--ring);
+  --color-accent: var(--accent);
+  --color-danger: var(--destructive);
+  --color-warning: var(--warning);
+  --color-success: var(--success);
+  --radius-md: 8px;
+  --radius-lg: 10px;
 }
+
+:root {
+  color-scheme: light dark;
+  --background: light-dark(#fafaf9, #141416);
+  --card: light-dark(#ffffff, #1e1e22);
+  --foreground: light-dark(#111113, #f4f4f5);
+  --muted: light-dark(#f8f8f9, #28282e);
+  --muted-foreground: light-dark(#71717a, #b6b6c1);
+  --secondary-foreground: light-dark(#3f3f46, #d4d4dc);
+  --border: light-dark(#e5e7eb, #36363d);
+  --input: light-dark(#898992, #73737f);
+  --primary: #5265e8;
+  --primary-hover: #4155d5;
+  --primary-foreground: #ffffff;
+  --accent: light-dark(#4355cb, #aab4ff);
+  --ring: light-dark(#5265e8, #aab4ff);
+  --destructive: light-dark(#a12635, #fda4af);
+  --warning: light-dark(#895009, #fcd28b);
+  --success: light-dark(#16734c, #86e3b0);
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 a {
   text-underline-offset: 0.25em;
 }
@@ -16,7 +65,7 @@ button {
   cursor: pointer;
 }
 :focus-visible {
-  outline: 2px solid #275ad6;
+  outline: 2px solid var(--ring);
   outline-offset: 4px;
 }
 
@@ -24,7 +73,7 @@ button {
   max-width: 100%;
   overflow-x: auto;
   border-radius: 0.375rem;
-  background: #f4f4f4;
+  background: var(--muted);
   padding: 0.75rem;
   white-space: pre;
 }
@@ -35,4 +84,22 @@ button {
 .markdown ol {
   list-style: decimal;
   padding-inline-start: 1.25rem;
+}
+
+.markdown pre,
+.markdown code {
+  font-family: var(--font-mono);
+}
+
+.navigation-drawer::backdrop {
+  background: rgb(12 13 22 / 55%);
+}
+.account-menu[open] summary {
+  background: var(--muted);
+}
+.account-menu summary {
+  list-style: none;
+}
+.account-menu summary::-webkit-details-marker {
+  display: none;
 }

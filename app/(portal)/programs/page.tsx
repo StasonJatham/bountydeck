@@ -1,14 +1,24 @@
+import { getI18n } from "../../../lib/i18n";
 import Link from "next/link";
+import { ArrowUpRight, Building2 } from "lucide-react";
+import { z } from "zod";
+import { ReportBadge } from "../../../components/report-badge";
 import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import { requireActor } from "../../../lib/actor";
 import { withActor } from "../../../db";
-import { orgUnits, programs } from "../../../db/schema";
+import { orgUnits, programs, programScopes } from "../../../db/schema";
 
 export default async function Programs({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; eligible?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    eligible?: string;
+    organization?: string;
+  }>;
 }) {
+  const { t, number } = await getI18n();
   const actor = await requireActor();
   const filters = await searchParams;
   const query = filters.q;
@@ -17,11 +27,13 @@ export default async function Programs({
   );
   const eligible = filters.eligible === "1";
   const q = typeof query === "string" ? query.trim().slice(0, 100) : "";
+  const selectedOrganization = z.uuid().safeParse(filters.organization).data;
   const rows = await withActor(actor, (tx) =>
     tx
       .select({
         program: programs,
         organization: orgUnits.name,
+        scopeCount: sql<number>`(select count(*)::int from ${programScopes} where ${programScopes.programId} = ${programs.id} and ${programScopes.inScope})`,
         eligible: sql<boolean>`app_can_submit(${programs.id})`,
       })
       .from(programs)
@@ -30,6 +42,9 @@ export default async function Programs({
         and(
           q
             ? or(ilike(programs.name, `%${q}%`), ilike(orgUnits.name, `%${q}%`))
+            : undefined,
+          selectedOrganization
+            ? eq(programs.orgId, selectedOrganization)
             : undefined,
           status && eq(programs.status, status),
           eligible ? sql`app_can_submit(${programs.id})` : undefined,
@@ -40,29 +55,36 @@ export default async function Programs({
   );
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">Programs</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">{t("Programs")}</h1>
       <form className="mt-6 flex flex-wrap gap-2">
+        {selectedOrganization && (
+          <input
+            type="hidden"
+            name="organization"
+            value={selectedOrganization}
+          />
+        )}
         <label className="sr-only" htmlFor="program-search">
-          Search programs
+          {t("Search programs")}
         </label>
         <input
           id="program-search"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-2"
+          className="min-w-0 grow basis-48 rounded-md border border-control bg-surface px-3 py-2"
           name="q"
           defaultValue={q}
-          placeholder="Search programs"
+          placeholder={t("Search programs")}
         />
         <select
-          aria-label="Program status"
-          className="rounded-md border border-neutral-300 bg-white px-3 py-2"
+          aria-label={t("Program status")}
+          className="rounded-md border border-control bg-surface px-3 py-2"
           name="status"
           defaultValue={status ?? ""}
         >
-          <option value="">All statuses</option>
-          <option>published</option>
-          <option>paused</option>
-          <option>draft</option>
-          <option>archived</option>
+          <option value="">{t("All statuses")}</option>
+          <option value="published">{t("published")}</option>
+          <option value="paused">{t("paused")}</option>
+          <option value="draft">{t("draft")}</option>
+          <option value="archived">{t("archived")}</option>
         </select>
         <label className="flex items-center gap-2 px-2 text-sm">
           <input
@@ -71,32 +93,59 @@ export default async function Programs({
             value="1"
             defaultChecked={eligible}
           />{" "}
-          Eligible for submission
+          {t("Eligible for submission")}
         </label>
-        <button className="rounded-md bg-neutral-900 px-4 py-2 text-white">
-          Search
+        <button className="rounded-md bg-action px-4 py-2 text-on-action">
+          {t("Search")}
         </button>
       </form>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {rows.map(({ program, organization, eligible }) => (
+        {rows.map(({ program, organization, eligible, scopeCount }) => (
           <Link
-            className="rounded-lg border border-neutral-200 bg-white p-5"
+            className="group flex min-w-0 flex-col rounded-xl border border-line bg-surface p-5 transition-colors hover:border-accent/40 hover:no-underline"
             key={program.id}
             href={`/programs/${program.id}`}
           >
-            <p className="text-sm text-neutral-600">
-              {organization} · {program.status}
-              {eligible ? " · Eligible" : ""}
-            </p>
-            <h2 className="mt-2 text-lg font-semibold">{program.name}</h2>
-            <p className="mt-2 line-clamp-3 text-sm text-neutral-700">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+                <Building2 size={14} aria-hidden />
+                {organization}
+              </span>
+              <ReportBadge status={program.status}>
+                {t(program.status)}
+              </ReportBadge>
+            </div>
+            <h2 className="mt-3 flex items-center justify-between gap-3 break-words text-lg font-semibold">
+              <span className="min-w-0">{program.name}</span>
+              <ArrowUpRight
+                className="shrink-0 text-muted group-hover:text-accent"
+                size={16}
+                aria-hidden
+              />
+            </h2>
+            <p className="mt-1 line-clamp-3 text-sm text-secondary">
               {program.description}
             </p>
+            {(scopeCount > 0 || eligible) && (
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-3 text-xs text-muted">
+                {scopeCount > 0 && (
+                  <span>
+                    {t(
+                      scopeCount === 1
+                        ? "{count} in-scope asset"
+                        : "{count} in-scope assets",
+                      { count: number(scopeCount) },
+                    )}
+                  </span>
+                )}
+                {eligible && <span>{t("Eligible for submission")}</span>}
+              </div>
+            )}
           </Link>
         ))}
       </div>
       {!rows.length && (
-        <p className="mt-6 text-neutral-600">No programs found.</p>
+        <p className="mt-6 text-muted">{t("No programs found.")}</p>
       )}
     </>
   );

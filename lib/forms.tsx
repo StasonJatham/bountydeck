@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-export const panel = "rounded-lg border border-neutral-200 bg-white p-5";
+export const panel = "rounded-lg border border-line bg-surface p-5";
 export const input =
-  "w-full rounded-md border border-neutral-300 bg-white px-3 py-2";
+  "w-full rounded-md border border-control bg-surface px-3 py-2";
 
 export function Field({
   label,

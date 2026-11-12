@@ -1,3 +1,4 @@
+import { getI18n } from "../../../../../lib/i18n";
 import { Button } from "../../../../../components/ui/button";
 import Link from "next/link";
 import { and, count, eq, sql } from "drizzle-orm";
@@ -27,6 +28,7 @@ export default async function Manage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  const { t, number } = await getI18n();
   const actor = await requireActor();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
@@ -59,21 +61,21 @@ export default async function Manage({
   );
   return (
     <>
-      <Link href={`/programs/${id}`} className="text-sm text-neutral-600">
-        ← Program
+      <Link href={`/programs/${id}`} className="text-sm text-muted">
+        {t("← Program")}
       </Link>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-        Manage {program.name}
+        {t("Manage {name}", { name: program.name })}
       </h1>
       <Link
         className="mt-3 inline-block underline"
         href={`/programs/${id}/manage/notifications`}
       >
-        Notification settings
+        {t("Notification settings")}
       </Link>
       {(await searchParams).error && (
-        <p role="alert" className="mt-4 text-red-800">
-          Check the details and try again.
+        <p role="alert" className="mt-4 text-danger">
+          {t("Check the details and try again.")}
         </p>
       )}
       <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
@@ -81,14 +83,14 @@ export default async function Manage({
           className={`${panel} grid gap-3`}
           action={updateProgram.bind(null, id)}
         >
-          <h2 className="font-semibold">Program settings</h2>
+          <h2 className="font-semibold">{t("Program settings")}</h2>
           {(
             [
               ["name", "Name"],
               ["slug", "Slug"],
             ] as const
           ).map(([key, label]) => (
-            <Field label={label} key={key}>
+            <Field label={t(label)} key={key}>
               <input
                 required
                 name={key}
@@ -105,7 +107,7 @@ export default async function Manage({
               ["disclosurePolicy", "Disclosure policy"],
             ] as const
           ).map(([key, label]) => (
-            <Field label={label} key={key}>
+            <Field label={t(label)} key={key}>
               <textarea
                 name={key}
                 defaultValue={program[key]}
@@ -134,21 +136,23 @@ export default async function Manage({
               ],
             ] as const
           ).map(([key, label, options]) => (
-            <Field label={label} key={key}>
+            <Field label={t(label)} key={key}>
               <select name={key} className={input} defaultValue={program[key]}>
                 {options.map((option) => (
-                  <option key={option}>{option}</option>
+                  <option key={option} value={option}>
+                    {t(option)}
+                  </option>
                 ))}
               </select>
             </Field>
           ))}
           <fieldset className="grid grid-cols-2 gap-2">
             <legend className="mb-2 text-sm font-medium">
-              Points per validated finding
+              {t("Points per validated finding")}
             </legend>
             {(["low", "medium", "high", "critical"] as const).map(
               (severity) => (
-                <Field label={severity} key={severity}>
+                <Field label={t(severity)} key={severity}>
                   <input
                     type="number"
                     name={severity}
@@ -162,29 +166,29 @@ export default async function Manage({
               ),
             )}
           </fieldset>
-          <Button>Save settings</Button>
+          <Button>{t("Save settings")}</Button>
         </form>
         <div className="grid gap-4">
           <form
             className={`${panel} grid gap-3`}
             action={addReward.bind(null, id)}
           >
-            <h2 className="font-semibold">Rewards</h2>
+            <h2 className="font-semibold">{t("Rewards")}</h2>
             <ul className="space-y-1 text-sm">
               {offers.map((reward) => (
                 <li key={reward.id}>
-                  {reward.name} · {reward.minimumPoints} points
+                  {reward.name} · {number(reward.minimumPoints)} {t("points")}
                 </li>
               ))}
             </ul>
-            <Text name="name" label="Reward name" max={100} />
+            <Text name="name" label={t("Reward name")} max={100} />
             <Text
               name="description"
-              label="Description"
+              label={t("Description")}
               multiline
               required={false}
             />
-            <Field label="Minimum points">
+            <Field label={t("Minimum points")}>
               <input
                 type="number"
                 name="minimumPoints"
@@ -194,34 +198,35 @@ export default async function Manage({
                 required
               />
             </Field>
-            <Button>Add reward</Button>
+            <Button>{t("Add reward")}</Button>
           </form>
           <section className={panel}>
-            <h2 className="font-semibold">Report activity</h2>
+            <h2 className="font-semibold">{t("Report activity")}</h2>
             <ul className="mt-2 space-y-1 text-sm">
               {statistics.map((row) => (
                 <li className="capitalize" key={row.status}>
-                  {row.status.replaceAll("_", " ")} · {row.total}
+                  {t(row.status.replaceAll("_", " "))} · {number(row.total)}
                 </li>
               ))}
             </ul>
             {!statistics.length && (
-              <p className="mt-2 text-sm">No reports yet.</p>
+              <p className="mt-2 text-sm">{t("No reports yet.")}</p>
             )}
           </section>
           <section className={panel}>
-            <h2 className="font-semibold">Scope</h2>
-            <div className="mt-2 divide-y divide-neutral-200">
+            <h2 className="font-semibold">{t("Scope")}</h2>
+            <div className="mt-2 divide-y divide-line">
               {scopes.map((item) => (
                 <details key={item.id} className="py-2">
                   <summary className="cursor-pointer text-sm">
-                    {item.name} · {item.inScope ? "In scope" : "Out of scope"}
+                    {item.name} ·{" "}
+                    {item.inScope ? t("In scope") : t("Out of scope")}
                   </summary>
                   <form
                     className="mt-3 grid gap-3"
                     action={updateScope.bind(null, id, item.id)}
                   >
-                    <Field label="Asset name">
+                    <Field label={t("Asset name")}>
                       <input
                         className={input}
                         name="name"
@@ -230,7 +235,7 @@ export default async function Manage({
                         maxLength={100}
                       />
                     </Field>
-                    <Field label="Description">
+                    <Field label={t("Description")}>
                       <textarea
                         className={input}
                         name="description"
@@ -244,9 +249,9 @@ export default async function Manage({
                         name="inScope"
                         defaultChecked={item.inScope}
                       />{" "}
-                      In scope
+                      {t("In scope")}
                     </label>
-                    <Button>Save asset</Button>
+                    <Button>{t("Save asset")}</Button>
                   </form>
                 </details>
               ))}
@@ -256,38 +261,39 @@ export default async function Manage({
             className={`${panel} grid gap-3`}
             action={addScope.bind(null, id)}
           >
-            <h2 className="font-semibold">Add to scope</h2>
-            <Text name="name" label="Asset name" max={100} />
+            <h2 className="font-semibold">{t("Add to scope")}</h2>
+            <Text name="name" label={t("Asset name")} max={100} />
             <Text
               name="description"
-              label="Description"
+              label={t("Description")}
               multiline
               required={false}
             />
             <label className="flex gap-2 text-sm">
-              <input type="checkbox" name="inScope" defaultChecked /> In scope
+              <input type="checkbox" name="inScope" defaultChecked />{" "}
+              {t("In scope")}
             </label>
-            <Button>Add asset</Button>
+            <Button>{t("Add asset")}</Button>
           </form>
           <form
             className={`${panel} grid gap-3`}
             action={setProgramRole.bind(null, id)}
           >
-            <h2 className="font-semibold">Program access</h2>
-            <Text name="userId" label="User ID" max={36} />
-            <Field label="Role">
+            <h2 className="font-semibold">{t("Program access")}</h2>
+            <Text name="userId" label={t("User ID")} max={36} />
+            <Field label={t("Role")}>
               <select name="role" className={input}>
-                <option>researcher</option>
-                <option>triager</option>
-                <option>manager</option>
+                <option value="researcher">{t("researcher")}</option>
+                <option value="triager">{t("triager")}</option>
+                <option value="manager">{t("manager")}</option>
               </select>
             </Field>
             <div className="flex gap-2">
               <Button name="change" value="grant">
-                Grant
+                {t("Grant")}
               </Button>
               <Button name="change" value="revoke">
-                Revoke
+                {t("Revoke")}
               </Button>
             </div>
           </form>

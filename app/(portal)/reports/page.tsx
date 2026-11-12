@@ -1,10 +1,12 @@
+import { getI18n } from "../../../lib/i18n";
 import { Button } from "../../../components/ui/button";
+import { ReportBadge } from "../../../components/report-badge";
 import Link from "next/link";
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
 import { withActor } from "../../../db";
 import { programs, reports } from "../../../db/schema";
 import { requireActor } from "../../../lib/actor";
-import { Field, input, panel } from "../../../lib/forms";
+import { Field, input } from "../../../lib/forms";
 import { severities, transitions, type Status } from "../../../lib/workflow";
 
 const statuses = Object.keys(transitions) as Status[];
@@ -14,12 +16,14 @@ export default async function Reports({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  const { t } = await getI18n();
   const actor = await requireActor();
   const query = await searchParams;
   const inbox = query.view === "inbox";
   const status = statuses.find((value) => value === query.status);
   const severity = severities.find((value) => value === query.severity);
   const before = Number(query.before);
+  const oldestFirst = query.sort === "oldest";
   const { rows, canTriage } = await withActor(actor, async (tx) => {
     const [{ canTriage }] = (
       await tx.execute<{ canTriage: boolean }>(
@@ -46,16 +50,17 @@ export default async function Reports({
           severity &&
             sql`coalesce(${reports.severity}, ${reports.proposedSeverity}) = ${severity}`,
           Number.isSafeInteger(before) && before > 0
-            ? lt(reports.number, before)
+            ? (oldestFirst ? gt : lt)(reports.number, before)
             : undefined,
         ),
       )
-      .orderBy(desc(reports.number))
+      .orderBy((oldestFirst ? asc : desc)(reports.number))
       .limit(31);
     return { rows, canTriage };
   });
   const next = new URLSearchParams({
     view: inbox ? "inbox" : "mine",
+    sort: oldestFirst ? "oldest" : "newest",
     status: status ?? "",
     severity: severity ?? "",
     before: String(rows[29]?.number ?? ""),
@@ -63,101 +68,129 @@ export default async function Reports({
   return (
     <>
       <h1 className="text-3xl font-semibold tracking-tight">
-        {inbox ? "Triage inbox" : "My reports"}
+        {inbox ? t("Triage inbox") : t("My reports")}
       </h1>
       {canTriage && (
-        <nav aria-label="Report views" className="mt-5 flex gap-5 text-sm">
-          <Link href="/reports" aria-current={!inbox ? "page" : undefined}>
-            My reports
+        <nav
+          aria-label={t("Report views")}
+          className="mt-5 flex gap-5 border-b border-line text-sm"
+        >
+          <Link
+            href="/reports"
+            aria-current={!inbox ? "page" : undefined}
+            className="border-b-2 border-transparent pb-2 text-muted aria-[current=page]:border-accent aria-[current=page]:text-foreground"
+          >
+            {t("My reports")}
           </Link>
           <Link
             href="/reports?view=inbox"
             aria-current={inbox ? "page" : undefined}
+            className="border-b-2 border-transparent pb-2 text-muted aria-[current=page]:border-accent aria-[current=page]:text-foreground"
           >
-            Triage inbox
+            {t("Triage inbox")}
           </Link>
         </nav>
       )}
       <form className="mt-6 flex flex-wrap items-end gap-3">
         {inbox && <input type="hidden" name="view" value="inbox" />}
-        <Field label="Status">
+        <Field label={t("Status")}>
           <select className={input} name="status" defaultValue={status ?? ""}>
-            <option value="">All statuses</option>
+            <option value="">{t("All statuses")}</option>
             {statuses.map((state) => (
               <option key={state} value={state}>
-                {state.replaceAll("_", " ")}
+                {t(state.replaceAll("_", " "))}
               </option>
             ))}
           </select>
         </Field>
-        <Field label="Severity">
+        <Field label={t("Severity")}>
           <select
             className={input}
             name="severity"
             defaultValue={severity ?? ""}
           >
-            <option value="">All severities</option>
+            <option value="">{t("All severities")}</option>
             {severities.map((level) => (
-              <option key={level}>{level}</option>
+              <option key={level} value={level}>
+                {t(level)}
+              </option>
             ))}
           </select>
         </Field>
-        <Button>Apply filters</Button>
+        <Field label={t("Sort")}>
+          <select
+            className={input}
+            name="sort"
+            defaultValue={oldestFirst ? "oldest" : "newest"}
+          >
+            <option value="newest">{t("Newest first")}</option>
+            <option value="oldest">{t("Oldest first")}</option>
+          </select>
+        </Field>
+        <Button>{t("Apply filters")}</Button>
       </form>
-      <div className={`${panel} mt-6 overflow-x-auto`}>
+      <div
+        className="mt-6 max-w-full overflow-x-auto rounded-xl border border-line bg-surface"
+        role="region"
+        aria-label={inbox ? t("Triage inbox") : t("My reports")}
+        tabIndex={rows.length ? 0 : undefined}
+      >
         {rows.length ? (
           <table className="w-full min-w-[30rem] text-left text-sm">
-            <thead className="border-b border-neutral-200 text-neutral-600">
+            <thead className="border-b border-line bg-subtle text-muted">
               <tr>
-                <th className="pb-3">Report</th>
-                <th className="pb-3">Program</th>
-                <th className="pb-3">Severity</th>
-                <th className="pb-3">Status</th>
+                <th scope="col" className="px-4 py-2.5 font-medium">
+                  {t("Report")}
+                </th>
+                <th scope="col" className="px-4 py-2.5 font-medium">
+                  {t("Program")}
+                </th>
+                <th scope="col" className="px-4 py-2.5 font-medium">
+                  {t("Severity")}
+                </th>
+                <th scope="col" className="px-4 py-2.5 font-medium">
+                  {t("Status")}
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200">
+            <tbody className="divide-y divide-line">
               {rows.slice(0, 30).map((report) => (
-                <tr key={report.id}>
-                  <td className="py-3 pr-3">
+                <tr key={report.id} className="hover:bg-subtle/50">
+                  <td className="px-4 py-2.5">
                     <Link
                       href={`/reports/${report.id}`}
                       className="font-medium"
                     >
-                      <span className="mr-2 whitespace-nowrap text-neutral-600">
+                      <span className="mr-2 whitespace-nowrap font-mono text-xs text-muted">
                         BSO-{report.number}
                       </span>
                       {report.title}
                     </Link>
                   </td>
-                  <td className="pr-3">{report.program ?? "—"}</td>
-                  <td className="pr-3 capitalize">
-                    <span
-                      className={
-                        report.severity === "critical" ||
-                        report.severity === "high"
-                          ? "font-medium text-red-800"
-                          : undefined
-                      }
-                    >
-                      {report.severity}
-                    </span>
+                  <td className="px-4 py-2.5">{report.program ?? "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-2.5">
+                    <ReportBadge severity={report.severity}>
+                      {t(report.severity)}
+                    </ReportBadge>
                   </td>
-                  <td className="capitalize">
-                    {report.status.replaceAll("_", " ")}
+                  <td className="whitespace-nowrap px-4 py-2.5">
+                    <ReportBadge status={report.status}>
+                      {t(report.status.replaceAll("_", " "))}
+                    </ReportBadge>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
-          <p className="text-sm text-neutral-600">
-            No reports match these filters.
+          <p className="p-5 text-sm text-muted">
+            {t("No reports match these filters.")}
           </p>
         )}
       </div>
       {rows.length > 30 && (
         <Link className="mt-4 inline-block underline" href={`/reports?${next}`}>
-          Next page
+          {t("Next page")}
         </Link>
       )}
     </>

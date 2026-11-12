@@ -15,7 +15,7 @@ docker compose run --rm migrate
 docker compose --profile keycloak up -d --no-build --wait
 ```
 
-Check the app at `http://bossob.test` and the identity console at `http://bossob.test/identity/admin/`. The initial Keycloak console account is `bossob-bootstrap`. Retrieve its randomly generated password from `secrets/keycloak_admin_password`. In the **bossob** realm, create a user, set their credentials and record their ID from the user details page. That ID is the OIDC subject for the bundled client. Sign in once with the realm user so Bossob records the identity. Set the shell variable `subject` to that user ID. Grant platform administration from the migration container:
+Check the app at `http://bossob.test` and the identity console at `http://bossob.test/identity/admin/`. The initial Keycloak console account is `bossob-bootstrap`. Retrieve its randomly generated password from `secrets/keycloak_admin_password`. In the **bossob** realm, create a user, set their credentials and record their ID from the user details page. That ID is the OIDC subject for the bundled client. Sign in once with the realm user so BountyDeck records the identity. Set the shell variable `subject` to that user ID. Grant platform administration from the migration container:
 
 ```sh
 docker compose run --rm migrate node db/grant-admin.ts \
@@ -57,7 +57,7 @@ Initialize secrets with `./deploy/init-secrets.sh` and leave the `keycloak` prof
 
 `ATTACHMENT_TYPES` restricts which supported evidence formats can be uploaded. The default accepts PNG and plain text. Set it to a comma-separated subset of `image/png,text/plain` with no spaces. Files are stored in the private `attachments` volume.
 
-Optionally set `ATTACHMENT_SCANNER` to an absolute path to a trusted scanner executable in the application image. Bossob gives it one argument, the private evidence path. A zero exit status accepts the file. Other exits, startup failures, and timeouts reject the upload. Supply the scanner and its signatures through your internal image or a local mount. Set `REPORT_EXPORTS_ENABLED=false` to disable JSON report downloads deployment-wide. Evidence downloads continue to require report access.
+Optionally set `ATTACHMENT_SCANNER` to an absolute path to a trusted scanner executable in the application image. BountyDeck gives it one argument, the private evidence path. A zero exit status accepts the file. Other exits, startup failures, and timeouts reject the upload. Supply the scanner and its signatures through your internal image or a local mount. Set `REPORT_EXPORTS_ENABLED=false` to disable JSON report downloads deployment-wide. Evidence downloads continue to require report access.
 
 ## Report retention
 
@@ -118,3 +118,7 @@ After restoring, verify discovery and sign-in, open an authorized report and dow
 Back up the running version and retain its images. Build the replacement from the locked dependencies, stop the app and worker, run the new migration service and start the new services. Review PostgreSQL and Keycloak upgrade requirements before changing their major versions. Roll back using the matching pre-upgrade backup if the schema upgrade cannot be reversed.
 
 Build the application and pull the pinned service images on a connected machine using the deployment architecture. Transfer them through an internal registry or `docker image save` and `docker image load`. When relying on archives, confirm that the target engine can resolve each digest-qualified Compose reference, or adjust the target references to the exact locally imported image tags and verify the image IDs. Start with `--no-build --pull never`. Run migrations with `docker compose run --pull never --rm migrate`. Provide local DNS, identity, certificates and any configured notification destinations. Avoid public ACME and use the TLS overlay for disconnected installations.
+
+## Language
+
+BountyDeck offers English and German in its language selector. The bundled realm enables both languages for new installations. For an existing Keycloak realm, enable internationalization under Realm settings and add English and German as supported locales. BountyDeck passes the chosen language to the identity provider during sign-in.
