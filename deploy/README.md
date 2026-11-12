@@ -28,7 +28,7 @@ The Keycloak database is created only when PostgreSQL initializes an empty volum
 
 ## Disposable test fixtures
 
-Run this only with an empty local Compose application database. Start the local Keycloak example using the test override so the host test runner can reach PostgreSQL at loopback port 55432. On an already-running local stack, the first command adds that loopback mapping.
+Run this only with an empty local Compose application database. Start the local Keycloak example using the test override so the host test runner can reach PostgreSQL at loopback port 55432. Use this override only for a disposable test project. PostgreSQL has no host port in the base stack. When finished, remove the override by recreating PostgreSQL with the base Compose file for that same project.
 
 ```sh
 docker compose -f compose.yaml -f deploy/compose.test.yaml --profile keycloak up -d --no-build --wait
