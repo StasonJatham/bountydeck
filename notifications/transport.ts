@@ -124,8 +124,9 @@ async function postWebhook(
 }
 
 function smtpTransport(value: string, allowPlaintext: boolean) {
-  const url = new URL(value);
+  const url = URL.parse(value);
   if (
+    !url ||
     !["smtp:", "smtps:"].includes(url.protocol) ||
     !url.hostname ||
     (url.pathname && url.pathname !== "/") ||
@@ -156,8 +157,9 @@ function smtpTransport(value: string, allowPlaintext: boolean) {
 export function createDeliveryTransport(
   env: Record<string, string | undefined>,
 ) {
-  const origin = new URL(env.APP_ORIGIN ?? "");
+  const origin = URL.parse(env.APP_ORIGIN ?? "");
   if (
+    !origin ||
     !["https:", "http:"].includes(origin.protocol) ||
     origin.username ||
     origin.password ||

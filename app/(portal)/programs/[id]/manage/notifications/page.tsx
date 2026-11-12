@@ -1,11 +1,12 @@
 import { Button } from "../../../../../../components/ui/button";
 import Link from "next/link";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withActor } from "../../../../../../db";
 import {
   notificationChannels,
+  notificationDeliveries,
   notificationOutbox,
   programs,
 } from "../../../../../../db/schema";
@@ -27,7 +28,7 @@ export default async function Notifications({
   const actor = await requireActor();
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const { channels, history } = await withActor(actor, async (tx) => {
+  const { channels, history, attempts } = await withActor(actor, async (tx) => {
     const [program] = await tx
       .select({ id: programs.id })
       .from(programs)
@@ -48,7 +49,20 @@ export default async function Notifications({
       .where(eq(notificationOutbox.programId, id))
       .orderBy(desc(notificationOutbox.createdAt))
       .limit(30);
-    return { channels, history };
+    const attempts = history.length
+      ? await tx
+          .select()
+          .from(notificationDeliveries)
+          .where(
+            inArray(
+              notificationDeliveries.outboxId,
+              history.map(({ id }) => id),
+            ),
+          )
+          .orderBy(desc(notificationDeliveries.attempt))
+          .limit(600)
+      : [];
+    return { channels, history, attempts };
   });
   const status = await searchParams;
   return (
@@ -174,7 +188,35 @@ export default async function Notifications({
                 >
                   <span>
                     {item.eventType} · {item.status} · {item.attempts} attempts
+                    {item.publicReportId && ` · ${item.publicReportId}`}
                   </span>
+                  {item.attempts > 0 && (
+                    <details className="basis-full">
+                      <summary className="cursor-pointer text-neutral-600">
+                        Attempts
+                      </summary>
+                      <ul className="mt-1 space-y-1 pl-4">
+                        {attempts
+                          .filter((attempt) => attempt.outboxId === item.id)
+                          .map((attempt) => (
+                            <li key={attempt.id}>
+                              {attempt.attempt}.{" "}
+                              {attempt.result.replaceAll("_", " ")}{" "}
+                              <time
+                                className="ml-2 text-neutral-600"
+                                dateTime={attempt.createdAt.toISOString()}
+                              >
+                                {attempt.createdAt
+                                  .toISOString()
+                                  .slice(0, 16)
+                                  .replace("T", " ")}{" "}
+                                UTC
+                              </time>
+                            </li>
+                          ))}
+                      </ul>
+                    </details>
+                  )}
                   {item.status === "dead" && (
                     <form
                       action={notificationOperation.bind(null, id, item.id)}

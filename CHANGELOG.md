@@ -7,3 +7,4 @@
 - Added immutable points, scoped seasonal rankings, achievements, and program rewards.
 - Added SMTP and signed webhook notifications with delivery history and retries.
 - Added Compose with optional Keycloak, private TLS, migration and backup workflows, and automated verification.
+- Added organization-scoped report retention, optional evidence scanning, and a deployment-wide export setting.

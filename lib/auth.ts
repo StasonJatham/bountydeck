@@ -28,7 +28,8 @@ export const { handlers, auth, signOut } = NextAuth(() => {
       ...adapter,
       getUserByAccount: (account) =>
         adapter.getUserByAccount!({ ...account, provider }),
-      linkAccount: (account) => adapter.linkAccount!({ ...account, provider }),
+      linkAccount: ({ userId, type, providerAccountId }) =>
+        adapter.linkAccount!({ userId, type, providerAccountId, provider }),
       unlinkAccount: (account) =>
         adapter.unlinkAccount!({ ...account, provider }),
       getAccount: (subject) => adapter.getAccount!(subject, provider),

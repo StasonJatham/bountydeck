@@ -1,0 +1,38 @@
+# Disposable integration stack only. Pair with compose.test.yaml.
+x-destinations: &destinations '{"https://notify-fixture.bossob.test:8443":["192.168.247.10"]}'
+services:
+  application:
+    environment:
+      WEBHOOK_DESTINATIONS: *destinations
+  worker:
+    environment:
+      WEBHOOK_DESTINATIONS: *destinations
+      SMTP_FROM: fixture@example.invalid
+      SMTP_ALLOW_PLAINTEXT: "true"
+    networks: [worker, database, notification_test]
+  notification-fixture:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    user: node
+    command: ["node", "/fixture.mjs"]
+    secrets: [internal_ca, notification_test_key, notification_test_hmac]
+    volumes:
+      - ./deploy/notification-fixture.mjs:/fixture.mjs:ro
+    networks:
+      notification_test:
+        ipv4_address: 192.168.247.10
+        aliases: [notify-fixture.bossob.test]
+networks:
+  notification_test:
+    internal: true
+    ipam:
+      config:
+        - subnet: 192.168.247.0/24
+secrets:
+  internal_ca:
+    file: ./secrets/notification_test_cert.pem
+  smtp_url:
+    file: ./secrets/notification_test_smtp
+  notification_test_key:
+    file: ./secrets/notification_test_key.pem
+  notification_test_hmac:
+    file: ./secrets/notification_test_hmac

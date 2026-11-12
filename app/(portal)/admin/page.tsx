@@ -6,6 +6,7 @@ import {
   auditEvents,
   orgMemberships,
   orgUnits,
+  platformSettings,
   users,
 } from "../../../db/schema";
 import { requireActor } from "../../../lib/actor";
@@ -15,6 +16,7 @@ import {
   createProgram,
   setOrgRole,
   updateOrganization,
+  updatePlatformSettings,
 } from "../../../lib/management";
 
 export default async function Administration({
@@ -23,9 +25,8 @@ export default async function Administration({
   searchParams: Promise<{ error?: string }>;
 }) {
   const actor = await requireActor();
-  const { platform, organizations, events, members } = await withActor(
-    actor,
-    async (tx) => {
+  const { platform, organizations, events, members, settings } =
+    await withActor(actor, async (tx) => {
       const { platform } = (
         await tx.execute<{ platform: boolean }>(
           sql`select app_platform_admin() as platform`,
@@ -57,9 +58,9 @@ export default async function Administration({
         })
         .from(orgMemberships)
         .innerJoin(users, eq(orgMemberships.userId, users.id));
-      return { platform, organizations, events, members };
-    },
-  );
+      const [settings] = await tx.select().from(platformSettings);
+      return { platform, organizations, events, members, settings };
+    });
   const managed = organizations.filter(({ admin }) => admin);
   return (
     <>
@@ -135,6 +136,31 @@ export default async function Administration({
                 Revoke
               </Button>
             </div>
+          </form>
+        )}
+        {platform && (
+          <form
+            className={`${panel} grid gap-3`}
+            action={updatePlatformSettings}
+          >
+            <h2 className="font-semibold">Platform settings</h2>
+            <label className="flex gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="reportExports"
+                defaultChecked={settings.reportExports}
+              />{" "}
+              Allow JSON report exports
+            </label>
+            <label className="flex gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="globalLeaderboard"
+                defaultChecked={settings.globalLeaderboard}
+              />{" "}
+              Show global leaderboard
+            </label>
+            <Button>Save platform settings</Button>
           </form>
         )}
         {platform && (

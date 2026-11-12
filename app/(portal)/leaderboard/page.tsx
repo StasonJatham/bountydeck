@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { withActor } from "../../../db";
 import { getLeaderboard } from "../../../db/rankings";
-import { orgUnits, programs } from "../../../db/schema";
+import { orgUnits, platformSettings, programs } from "../../../db/schema";
 import { requireActor } from "../../../lib/actor";
 import { Field, input, panel } from "../../../lib/forms";
 
@@ -32,7 +32,7 @@ export default async function Leaderboard({
   const match = /^(organization|program):(.+)$/.exec(scope);
   if (scope !== "global" && (!match || !z.uuid().safeParse(match[2]).success))
     notFound();
-  const [rows, selections] = await Promise.all([
+  const [rows, { selections, settings }] = await Promise.all([
     getLeaderboard(
       actor,
       match ? (match[1] as "organization" | "program") : "global",
@@ -40,8 +40,11 @@ export default async function Leaderboard({
       period,
       points && after ? { points, userId: after } : undefined,
     ),
-    withActor(actor, (tx) =>
-      tx
+    withActor(actor, async (tx) => {
+      const [settings] = await tx
+        .select({ globalLeaderboard: platformSettings.globalLeaderboard })
+        .from(platformSettings);
+      const selections = await tx
         .select({
           id: programs.id,
           name: programs.name,
@@ -50,8 +53,9 @@ export default async function Leaderboard({
         })
         .from(programs)
         .innerJoin(orgUnits, eq(programs.orgId, orgUnits.id))
-        .orderBy(orgUnits.name, programs.name),
-    ),
+        .orderBy(orgUnits.name, programs.name);
+      return { selections, settings };
+    }),
   ]);
   const organizations = new Map(
     selections.map(({ orgId, org }) => [orgId, org]),
@@ -71,7 +75,9 @@ export default async function Leaderboard({
       <form className="mt-6 flex flex-wrap items-end gap-3">
         <Field label="Scope">
           <select className={input} name="scope" defaultValue={scope}>
-            <option value="global">Global</option>
+            <option value="global">
+              {settings.globalLeaderboard ? "Global" : "Global (disabled)"}
+            </option>
             <optgroup label="Organizations">
               {Array.from(organizations, ([id, name]) => (
                 <option key={id} value={`organization:${id}`}>
@@ -123,7 +129,11 @@ export default async function Leaderboard({
           </tbody>
         </table>
         {!rows.length && (
-          <p className="mt-3">No visible rankings for this selection.</p>
+          <p className="mt-3">
+            {scope === "global" && !settings.globalLeaderboard
+              ? "The platform administrator has disabled global rankings."
+              : "No visible rankings for this selection."}
+          </p>
         )}
       </div>
       {rows.length > 100 && next && (

@@ -53,6 +53,12 @@
     "vitest": "5.1.0"
   },
   "overrides": {
-    "nodemailer": "$nodemailer"
+    "nodemailer": "$nodemailer",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.8"
+    }
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

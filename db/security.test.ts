@@ -86,6 +86,11 @@ test.skipIf(!connectionString)(
       );
       expect(rows).toEqual([{ rolsuper: false, rolbypassrls: false }]);
       await actor(researcher);
+      expect(
+        await count(
+          "UPDATE platform_settings SET report_exports = false RETURNING singleton",
+        ),
+      ).toBe(0);
 
       const submission = `INSERT INTO reports (id,program_id,reporter_id,asset_id,title,description,cwe,steps,impact,proposed_severity)
       VALUES ($1,$2,$3,$4,'Fixture','Confidential test data','CWE-200','Fixture','Fixture','low')`;

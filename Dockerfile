@@ -18,7 +18,7 @@ COPY --from=build --chown=node:node /app/node_modules/nodemailer ./node_modules/
 COPY --from=build --chown=node:node /app/db/migrations ./db/migrations
 COPY --from=build --chown=node:node /app/db/migrate.ts /app/db/grant-admin.ts ./db/
 COPY --from=build --chown=node:node /app/notifications/worker.ts /app/notifications/transport.ts /app/notifications/policy.ts ./notifications/
-COPY --from=build --chown=node:node /app/deploy/entrypoint.sh ./deploy/entrypoint.sh
+COPY --from=build --chown=node:node /app/deploy/entrypoint.sh /app/deploy/retention.ts ./deploy/
 RUN install -d -o node -g node -m 0700 /var/lib/bossob/attachments
 USER node
 ENTRYPOINT ["/bin/sh", "/app/deploy/entrypoint.sh"]

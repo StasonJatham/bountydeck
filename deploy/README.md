@@ -57,6 +57,19 @@ Initialize secrets with `./deploy/init-secrets.sh` and leave the `keycloak` prof
 
 `ATTACHMENT_TYPES` restricts which supported evidence formats can be uploaded. The default accepts PNG and plain text. Set it to a comma-separated subset of `image/png,text/plain` with no spaces. Files are stored in the private `attachments` volume.
 
+Optionally set `ATTACHMENT_SCANNER` to an absolute path to a trusted scanner executable in the application image. Bossob gives it one argument, the private evidence path. A zero exit status accepts the file. Other exits, startup failures, and timeouts reject the upload. Supply the scanner and its signatures through your internal image or a local mount. Set `REPORT_EXPORTS_ENABLED=false` to disable JSON report downloads deployment-wide. Evidence downloads continue to require report access.
+
+## Report retention
+
+Use your organization’s approved retention period. Stop the application and worker for the maintenance window and make an encrypted database and evidence backup. Choose the organization UUID and the user UUID of a platform administrator for audit attribution. Run a dry run first, then use `--apply` to redact eligible closed reports.
+
+```sh
+docker compose run --rm retention node deploy/retention.ts "$org" 365 "$actor"
+docker compose run --rm retention node deploy/retention.ts "$org" 365 "$actor" --apply
+```
+
+Retention removes report text, discussions, CVSS vectors, and evidence. It keeps the report identifier, workflow metadata, audit history, and score ledger. Pending evidence deletions remain queued if storage is unavailable. Re-run the apply command after correcting storage permissions. Rotate confidential backups and exported copies under the same organizational policy.
+
 ## Notifications
 
 Set `SMTP_FROM` and save the authenticated relay URL in `secrets/smtp_url`. Use TLS. For an isolated integration relay, `SMTP_ALLOW_PLAINTEXT=true` opts out of the TLS requirement.

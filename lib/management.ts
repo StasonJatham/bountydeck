@@ -8,6 +8,7 @@ import {
   auditEvents,
   orgMemberships,
   orgUnits,
+  platformSettings,
   programMemberships,
   programs,
   programScopes,
@@ -353,4 +354,25 @@ export async function updateScope(
     if (!scope) notFound();
   });
   redirect(`/programs/${programId}/manage`);
+}
+
+export async function updatePlatformSettings(data: FormData) {
+  const actor = await requireActor();
+  const settings = {
+    reportExports: data.get("reportExports") === "on",
+    globalLeaderboard: data.get("globalLeaderboard") === "on",
+  };
+  await withActor(actor, async (tx) => {
+    const [updated] = await tx
+      .update(platformSettings)
+      .set(settings)
+      .returning({ singleton: platformSettings.singleton });
+    if (!updated) notFound();
+    await tx.insert(auditEvents).values({
+      actorId: actor,
+      kind: "platform.settings_updated",
+      details: settings,
+    });
+  });
+  redirect("/admin");
 }

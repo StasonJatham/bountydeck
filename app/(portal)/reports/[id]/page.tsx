@@ -6,6 +6,7 @@ import Markdown from "react-markdown";
 import { z } from "zod";
 import { withActor } from "../../../../db";
 import {
+  platformSettings,
   programMemberships,
   reportAttachments,
   reportComments,
@@ -43,6 +44,7 @@ export default async function Report({
     attachments,
     assignees,
     awards,
+    settings,
   } = await withActor(actor, async (tx) => {
     const [row] = await tx
       .select({
@@ -88,8 +90,33 @@ export default async function Report({
       .from(scoreEvents)
       .where(eq(scoreEvents.reportId, id))
       .orderBy(scoreEvents.createdAt);
-    return { ...row, comments, events, attachments, assignees, awards };
+    const [settings] = await tx
+      .select({ reportExports: platformSettings.reportExports })
+      .from(platformSettings);
+    return {
+      ...row,
+      comments,
+      events,
+      attachments,
+      assignees,
+      awards,
+      settings,
+    };
   });
+  if (report.contentRedactedAt) {
+    return (
+      <>
+        <p className="text-sm text-neutral-600">BSO-{report.number}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+          Report content expired
+        </h1>
+        <p className="mt-4">
+          The report’s content, discussion, and evidence were removed under the
+          organization’s retention policy.
+        </p>
+      </>
+    );
+  }
   const error = (await searchParams).error;
   const options = transitions[report.status];
   return (
@@ -110,12 +137,15 @@ export default async function Report({
           The change could not be saved. Check the form and try again.
         </p>
       )}
-      <a
-        className="mt-3 inline-block text-sm underline"
-        href={`/api/reports/${id}/export`}
-      >
-        Export report
-      </a>
+      {settings.reportExports &&
+        process.env.REPORT_EXPORTS_ENABLED !== "false" && (
+          <a
+            className="mt-3 inline-block text-sm underline"
+            href={`/api/reports/${id}/export`}
+          >
+            Export report
+          </a>
+        )}
       <div className="mt-6 grid gap-5 lg:grid-cols-[2fr_1fr]">
         <div className="min-w-0 space-y-5">
           <section className={panel}>

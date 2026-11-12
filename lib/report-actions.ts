@@ -93,11 +93,13 @@ export async function comment(reportId: string, data: FormData) {
     const [report] = await tx
       .select({
         id: reports.id,
+        redacted: reports.contentRedactedAt,
         reviewer: sql<boolean>`app_reviews_program(${reports.programId})`,
       })
       .from(reports)
       .where(eq(reports.id, reportId));
-    if (!report || (internal && !report.reviewer)) notFound();
+    if (!report || report.redacted || (internal && !report.reviewer))
+      notFound();
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${actor}), 2)`);
     const recent = await tx
       .select({ id: reportComments.id })

@@ -1,19 +1,30 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { withActor } from "../../../../../db";
-import { auditEvents, reportComments, reports } from "../../../../../db/schema";
+import {
+  auditEvents,
+  platformSettings,
+  reportComments,
+  reports,
+} from "../../../../../db/schema";
 import { auth } from "../../../../../lib/auth";
 
 export async function GET(
   _: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  if (process.env.REPORT_EXPORTS_ENABLED === "false")
+    return new Response(null, { status: 404 });
   const session = await auth();
   const { id } = await context.params;
   if (!session?.actorId || !z.uuid().safeParse(id).success)
     return new Response(null, { status: 404 });
   const actorId = session.actorId;
   const result = await withActor(actorId, async (tx) => {
+    const [settings] = await tx
+      .select({ enabled: platformSettings.reportExports })
+      .from(platformSettings);
+    if (!settings.enabled) return null;
     const [report] = await tx
       .select({
         number: reports.number,
@@ -29,7 +40,7 @@ export async function GET(
         createdAt: reports.createdAt,
       })
       .from(reports)
-      .where(eq(reports.id, id));
+      .where(and(eq(reports.id, id), isNull(reports.contentRedactedAt)));
     if (!report) return null;
     const comments = await tx
       .select({

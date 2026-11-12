@@ -26,6 +26,9 @@ case "${BOSSOB_SERVICE:-app}" in
       export SMTP_URL="$(read_secret smtp_url)"
     fi
     ;;
+  retention)
+    export RETENTION_DATABASE_URL="$(database_url db_admin_password postgres)"
+    ;;
   migrate)
     export MIGRATION_DATABASE_URL="$(database_url db_migrate_password bossob_migrate)"
     ;;

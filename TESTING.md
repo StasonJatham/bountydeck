@@ -19,3 +19,16 @@ Use a disposable migrated database. Set `RLS_TEST_DATABASE_URL` to a login that 
 Follow [the disposable Compose fixture setup](deploy/README.md#disposable-test-fixtures), install Chromium with `npx playwright install chromium`, and run `npm run e2e`. Set `E2E_USE_SYSTEM_CHROME=1` to use an installed Google Chrome. Set `E2E_PASSWORD` if the test password file is stored elsewhere. The browser tests write synthetic reports and organizations to the fixture database. Treat browser traces as confidential if pointed at a live environment.
 
 For deployment verification, start the application with empty volumes and with prebuilt images on isolated networks. Verify health and OIDC discovery, then restore backups into a separate Compose project. Check restored database policies, identity records, and attachment bytes.
+
+For the browser-to-worker notification test, start the disposable fixture stack with its test-only SMTP and HTTPS receivers. The receivers reject the first delivery and accept the retry. The HTTPS receiver also verifies the signature and excludes confidential report text.
+
+```sh
+./deploy/provision-test-notifications.sh
+docker compose -f compose.yaml -f deploy/compose.test.yaml \
+  -f deploy/compose.notification-test.yaml --profile keycloak up -d --no-build --wait
+E2E_NOTIFICATION_FIXTURE=1 npm run e2e
+```
+
+Use this overlay only with the disposable fixture deployment. Its self-signed receiver certificate and HMAC are generated locally.
+
+Use a fresh fixture deployment for repeated acceptance runs. The fixture researcher is subject to the same hourly submission limit as every other account.

@@ -1,12 +1,12 @@
 # Backlog
 
-| ID     | Priority | Dependencies            | Objective and verification                                                                           | State       | Blockers |
-| ------ | -------- | ----------------------- | ---------------------------------------------------------------------------------------------------- | ----------- | -------- |
-| FND    | P0       | None                    | Pin stack, initialize migrations and app. Build and start with real PostgreSQL.                      | IN_PROGRESS |          |
-| IAM    | P0       | FND                     | Integrate OIDC, roles and organizations. Verify sessions, revocation and tenant isolation.           | IN_PROGRESS |          |
-| PRG    | P0       | IAM                     | Implement program management, scope, eligibility and directory. Verify manager and researcher flows. | TODO        |          |
-| RPT    | P0       | PRG                     | Implement reports, private evidence, comments and transitions. Verify lifecycle and object access.   | TODO        |          |
-| SCORE  | P1       | RPT                     | Implement ledger, rankings, seasons and rewards. Verify concurrent validation and visibility.        | TODO        |          |
-| NOTIFY | P1       | RPT                     | Deliver SMTP and webhooks from durable outbox. Verify retries and payload confidentiality.           | IN_PROGRESS |          |
-| UX     | P1       | PRG, RPT, SCORE, NOTIFY | Verify complete navigation and responsive workflows in Chromium.                                     | TODO        |          |
-| OPS    | P0       | All                     | Verify clean Compose deployment, offline runtime, backup restore, and security regression.           | TODO        |          |
+| ID     | Priority | Dependencies            | Objective and verification                                                                                                                                                                        | State | Blockers |
+| ------ | -------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | -------- |
+| FND    | P0       | None                    | Pin the stack. Build and run the Next.js app with PostgreSQL and eight Drizzle migrations. Production and Compose builds passed.                                                                  | DONE  |          |
+| IAM    | P0       | FND                     | Integrate OIDC, database sessions, scoped roles, and platform settings. Keycloak sign-in, sign-out, revocation, and tenant isolation passed.                                                      | DONE  |          |
+| PRG    | P0       | IAM                     | Deliver program discovery, scope, eligibility, settings, and membership management. Browser management and outsider-denial checks passed.                                                         | DONE  |          |
+| RPT    | P0       | PRG                     | Deliver confidential reports, evidence, comments, assignment, CVSS and state transitions. Browser lifecycle, evidence, export, and private-note checks passed.                                    | DONE  |          |
+| SCORE  | P1       | RPT                     | Deliver score ledger, rankings, seasons, achievements and rewards. Concurrent validation, ranking privacy, and browser award checks passed.                                                       | DONE  |          |
+| NOTIFY | P1       | RPT                     | Deliver signed HTTPS and SMTP notifications from a durable outbox. Browser tests confirmed retry and recorded history for both transports.                                                        | DONE  |          |
+| UX     | P1       | PRG, RPT, SCORE, NOTIFY | Verify desktop and mobile workflows in Chromium. Screenshots inspected, with a 390 px overflow check on the researcher report.                                                                    | DONE  |          |
+| OPS    | P0       | All                     | Clean isolated installation applied eight migrations. Restore recovered application and Keycloak data, forced report RLS, and matching evidence bytes. Retention and the dependency audit passed. | DONE  |          |

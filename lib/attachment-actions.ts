@@ -1,5 +1,8 @@
 "use server";
 
+import { execFile } from "node:child_process";
+import { isAbsolute } from "node:path";
+import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -9,6 +12,8 @@ import { z } from "zod";
 import { withActor } from "../db";
 import { reportAttachments, reportEvents, reports } from "../db/schema";
 import { requireActor } from "./actor";
+
+const scanFile = promisify(execFile);
 
 export async function uploadEvidence(reportId: string, data: FormData) {
   const actor = await requireActor();
@@ -45,10 +50,10 @@ export async function uploadEvidence(reportId: string, data: FormData) {
   try {
     await withActor(actor, async (tx) => {
       const [report] = await tx
-        .select({ id: reports.id })
+        .select({ id: reports.id, redacted: reports.contentRedactedAt })
         .from(reports)
         .where(eq(reports.id, reportId));
-      if (!report) notFound();
+      if (!report || report.redacted) notFound();
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtext(${reportId}), 1)`,
       );
@@ -62,6 +67,19 @@ export async function uploadEvidence(reportId: string, data: FormData) {
       await mkdir(directory, { recursive: true, mode: 0o700 });
       await writeFile(path, bytes, { flag: "wx", mode: 0o600 });
       stored = true;
+      const scanner = process.env.ATTACHMENT_SCANNER;
+      if (scanner) {
+        if (!isAbsolute(scanner))
+          redirect(`/reports/${reportId}?error=scanner`);
+        const clean = await scanFile(scanner, [path], {
+          timeout: 10_000,
+          maxBuffer: 65_536,
+        }).then(
+          () => true,
+          () => false,
+        );
+        if (!clean) redirect(`/reports/${reportId}?error=scanner`);
+      }
       await tx.insert(reportAttachments).values({
         reportId,
         uploadedBy: actor,
@@ -75,7 +93,17 @@ export async function uploadEvidence(reportId: string, data: FormData) {
         .values({ reportId, actorId: actor, kind: "attachment_uploaded" });
     });
   } catch (error) {
-    if (stored) await unlink(path).catch(() => {});
+    if (stored) {
+      const linked = await withActor(actor, async (tx) => {
+        const [{ exists }] = (
+          await tx.execute<{ exists: boolean }>(
+            sql`select exists (select from report_attachments where storage_key = ${storageKey}::uuid)`,
+          )
+        ).rows;
+        return exists;
+      }).catch(() => true);
+      if (!linked) await unlink(path).catch(() => {});
+    }
     throw error;
   }
   redirect(`/reports/${reportId}`);

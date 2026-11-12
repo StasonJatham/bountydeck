@@ -165,6 +165,7 @@ export const reports = pgTable("reports", {
   severity: text("severity", {
     enum: ["none", "low", "medium", "high", "critical"],
   }),
+  contentRedactedAt: date("content_redacted_at"),
   cvssVector: text("cvss_vector"),
   cvssScore: real("cvss_score"),
   assigneeId: uuid("assignee_id").references(() => users.id),
@@ -338,4 +339,10 @@ export const auditEvents = pgTable("audit_events", {
     .notNull()
     .default({}),
   createdAt: date("created_at").notNull().defaultNow(),
+});
+
+export const platformSettings = pgTable("platform_settings", {
+  singleton: boolean("singleton").primaryKey().default(true),
+  reportExports: boolean("report_exports").notNull().default(true),
+  globalLeaderboard: boolean("global_leaderboard").notNull().default(true),
 });

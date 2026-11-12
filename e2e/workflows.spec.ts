@@ -46,6 +46,10 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
 }, info) => {
   const researcher = await login(browser, baseURL, "local-researcher", true);
   await researcher.goto(`/programs/${program}`);
+  const pointPolicy = await researcher
+    .getByText(/^high · \d+ points$/)
+    .innerText();
+  const award = Number(pointPolicy.match(/\d+/)?.[0]);
   const title = `Browser acceptance ${randomUUID()}`;
   for (const [label, value] of Object.entries({
     Title: title,
@@ -75,6 +79,9 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
       evidence,
     ),
   ).toBe("Synthetic evidence");
+  expect(
+    await researcher.evaluate(() => document.documentElement.scrollWidth),
+  ).toBe(390);
   await researcher.screenshot({
     path: info.outputPath("researcher-mobile.png"),
     fullPage: true,
@@ -90,7 +97,17 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   await triager.getByRole("button", { name: "Post comment" }).click();
   await expect(triager.getByText("Thank you for the report.")).toBeVisible();
   await changeStatus(triager, "triage");
+  await triager
+    .getByLabel("CVSS 4.0 vector")
+    .fill("CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H");
   await changeStatus(triager, "validated", "high");
+  await expect(triager.getByText(/CVSS 10\.0/)).toBeVisible();
+  await expect(
+    triager
+      .getByRole("heading", { name: "Points history" })
+      .locator("..")
+      .getByText(String(award), { exact: true }),
+  ).toBeVisible();
   await triager.screenshot({
     path: info.outputPath("triage-desktop.png"),
     fullPage: true,
@@ -125,6 +142,14 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
       exportPath,
     ),
   ).toBe(404);
+  await researcher.getByRole("button", { name: "Sign out" }).click();
+  await expect(
+    researcher.getByRole("heading", { name: "Internal bug bounty" }),
+  ).toBeVisible();
+  await researcher.goto("/dashboard");
+  await expect(
+    researcher.getByRole("button", { name: /sign in with company account/i }),
+  ).toBeVisible();
   await researcher.close();
   await triager.close();
   await outsider.close();
@@ -137,6 +162,34 @@ test("organization and program administration enforce role boundaries", async ({
   const suffix = randomUUID().slice(0, 8);
   const admin = await login(browser, baseURL, "local-platform-admin");
   await admin.goto("/admin");
+  const globalRankings = admin.getByRole("checkbox", {
+    name: "Show global leaderboard",
+  });
+  await globalRankings.uncheck();
+  await admin.getByRole("button", { name: "Save platform settings" }).click();
+  await expect(
+    admin.getByText("platform.settings_updated").first(),
+  ).toBeVisible();
+  try {
+    await admin.goto("/leaderboard");
+    await expect(
+      admin.getByText(
+        "The platform administrator has disabled global rankings.",
+      ),
+    ).toBeVisible();
+  } finally {
+    await admin.goto("/admin");
+    await globalRankings.check();
+    await Promise.all([
+      admin.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          new URL(response.url()).pathname === "/admin",
+      ),
+      admin.getByRole("button", { name: "Save platform settings" }).click(),
+    ]);
+    await admin.goto("/admin");
+  }
   const createOrg = admin.locator("form").filter({
     has: admin.getByRole("heading", { name: "Create organization" }),
   });
@@ -204,6 +257,7 @@ test("organization and program administration enforce role boundaries", async ({
   await expect(manager.getByText("security@example.invalid")).toBeVisible();
   await manager.getByRole("button", { name: "Send test" }).click();
   await expect(manager.getByRole("status")).toContainText("Change saved");
+  await expect(manager.getByText(/^notification\.test ·/)).toBeVisible();
   await manager.screenshot({
     path: info.outputPath("notifications-desktop.png"),
     fullPage: true,
@@ -215,4 +269,94 @@ test("organization and program administration enforce role boundaries", async ({
     404,
   );
   await Promise.all([admin.close(), manager.close(), outsider.close()]);
+});
+
+test("SMTP and signed HTTPS notifications retry and record attempts", async ({
+  browser,
+  baseURL,
+}) => {
+  test.skip(
+    process.env.E2E_NOTIFICATION_FIXTURE !== "1",
+    "Requires the local notification fixture",
+  );
+  const recipient = "browser-notification@example.invalid";
+  const endpoint = "https://notify-fixture.bossob.test:8443/report";
+  const manager = await login(browser, baseURL, "local-manager");
+  const settings = `/programs/${program}/manage/notifications`;
+  await manager.goto(settings);
+  for (const destination of [recipient, endpoint]) {
+    const existing = manager
+      .getByText(destination, { exact: true })
+      .locator("..")
+      .getByRole("button", { name: "Disable", exact: true });
+    for (let remaining = await existing.count(); remaining > 0; remaining--) {
+      await existing.first().click();
+      await expect(existing).toHaveCount(remaining - 1);
+    }
+    await manager
+      .getByRole("combobox", { name: "Transport" })
+      .selectOption(destination === recipient ? "smtp" : "webhook");
+    await manager.getByLabel("Email address or webhook URL").fill(destination);
+    if (destination === endpoint) {
+      const hmac = readFileSync(
+        "secrets/notification_test_hmac",
+        "utf8",
+      ).trim();
+      await manager
+        .getByLabel("Webhook signing secret", { exact: false })
+        .fill(hmac);
+    }
+    await manager.getByRole("button", { name: "Add channel" }).click();
+    await expect(
+      manager
+        .getByText(destination, { exact: true })
+        .locator("..")
+        .getByRole("button", { name: "Disable", exact: true }),
+    ).toBeVisible();
+  }
+  const researcher = await login(browser, baseURL, "local-researcher");
+  await researcher.goto(`/programs/${program}`);
+  const title = `Notification acceptance ${randomUUID()}`;
+  for (const [label, value] of Object.entries({
+    Title: title,
+    "Weakness (e.g. CWE-200)": "CWE-200",
+    Description: "Synthetic confidential report",
+    "Reproduction steps": "Open the fixture",
+    "Proof of concept": "Synthetic data",
+    Impact: "Demonstrates notifications",
+  })) {
+    await researcher.getByLabel(label, { exact: true }).fill(value);
+  }
+  await researcher.getByRole("button", { name: "Submit report" }).click();
+  await expect(researcher.getByRole("heading", { name: title })).toBeVisible();
+  const reportNumber = (
+    await researcher.locator("main > p").first().innerText()
+  ).split(" · ")[0];
+  const deliveries = manager
+    .getByText(`report.submitted · delivered · 2 attempts · ${reportNumber}`, {
+      exact: true,
+    })
+    .locator("..");
+  await expect
+    .poll(
+      async () => {
+        await manager.reload();
+        return deliveries.count();
+      },
+      { timeout: 40_000, intervals: [500, 1000] },
+    )
+    .toBe(2);
+  for (const button of await deliveries
+    .getByText("Attempts", { exact: true })
+    .all())
+    await button.click();
+  for (const result of [
+    /1\. smtp transport error/,
+    /2\. smtp accepted/,
+    /1\. http 503/,
+    /2\. http 204/,
+  ]) {
+    await expect(deliveries.getByText(result)).toBeVisible();
+  }
+  await Promise.all([manager.close(), researcher.close()]);
 });

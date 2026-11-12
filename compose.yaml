@@ -46,6 +46,8 @@ services:
       AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
       OIDC_ISSUER: ${OIDC_ISSUER:?Set OIDC_ISSUER}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bossob}
+      ATTACHMENT_SCANNER: ${ATTACHMENT_SCANNER:-}
+      REPORT_EXPORTS_ENABLED: ${REPORT_EXPORTS_ENABLED:-true}
       ATTACHMENTS_DIR: /var/lib/bossob/attachments
       ATTACHMENT_TYPES: ${ATTACHMENT_TYPES:-image/png,text/plain}
       APP_ORIGIN: ${AUTH_URL:?Set AUTH_URL}
@@ -89,6 +91,19 @@ services:
       BOSSOB_SERVICE: migrate
     secrets: [db_migrate_password]
     networks: [database]
+
+  retention:
+    <<: *bossob
+    profiles: [tools]
+    restart: "no"
+    command: ["node", "deploy/retention.ts"]
+    environment:
+      BOSSOB_SERVICE: retention
+      ATTACHMENTS_DIR: /var/lib/bossob/attachments
+    secrets: [db_admin_password]
+    networks: [database]
+    volumes:
+      - attachments:/var/lib/bossob/attachments
 
   reverse-proxy:
     image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
