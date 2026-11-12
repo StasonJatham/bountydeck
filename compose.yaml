@@ -1,5 +1,7 @@
-x-bossob: &bossob
-  image: ${BOSSOB_IMAGE:-bossob:local}
+name: bountydeck
+
+x-bountydeck: &bountydeck
+  image: ${BOUNTYDECK_IMAGE:-bountydeck:local}
   build: .
   security_opt: [no-new-privileges:true]
   depends_on:
@@ -11,6 +13,7 @@ services:
     image: postgres:18.6-alpine@sha256:9ba53c7d41ea093baf5c1ba635ba5434c4f979880527d49bb7d9237d3193085b
     restart: unless-stopped
     environment:
+      BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
       POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
     secrets:
@@ -22,7 +25,7 @@ services:
     networks: [database]
     volumes:
       - postgres:/var/lib/postgresql
-      - ./deploy/init-postgres.sh:/docker-entrypoint-initdb.d/10-bossob.sh:ro
+      - ./deploy/init-postgres.sh:/docker-entrypoint-initdb.d/10-bountydeck.sh:ro
     healthcheck:
       test:
         [
@@ -40,22 +43,29 @@ services:
       retries: 20
 
   application:
-    <<: *bossob
+    <<: *bountydeck
     restart: unless-stopped
     environment:
+      BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
       AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
       OIDC_ISSUER: ${OIDC_ISSUER:?Set OIDC_ISSUER}
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bossob}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bountydeck}
+      INTEGRATION_AUDIENCE: ${INTEGRATION_AUDIENCE:-}
+      INTEGRATION_SCOPE: ${INTEGRATION_SCOPE:-bountydeck.api}
+      INTEGRATION_INTROSPECTION_CLIENT_ID: ${INTEGRATION_INTROSPECTION_CLIENT_ID:-}
+      INTEGRATION_INTROSPECTION_CLIENT_SECRET_FILE: ${INTEGRATION_INTROSPECTION_CLIENT_SECRET_FILE:-}
+      INTEGRATION_SERVICE_CLIENTS: ${INTEGRATION_SERVICE_CLIENTS:-{}}
+      INTEGRATION_ALLOW_HTTP: ${INTEGRATION_ALLOW_HTTP:-false}
       ATTACHMENT_SCANNER: ${ATTACHMENT_SCANNER:-}
       REPORT_EXPORTS_ENABLED: ${REPORT_EXPORTS_ENABLED:-true}
-      ATTACHMENTS_DIR: /var/lib/bossob/attachments
+      ATTACHMENTS_DIR: /var/lib/bountydeck/attachments
       ATTACHMENT_TYPES: ${ATTACHMENT_TYPES:-image/png,text/plain}
       APP_ORIGIN: ${AUTH_URL:?Set AUTH_URL}
       WEBHOOK_DESTINATIONS: ${WEBHOOK_DESTINATIONS:-{}}
     networks: [web, database]
     secrets: [db_app_password, auth_secret, oidc_client_secret, internal_ca]
     volumes:
-      - attachments:/var/lib/bossob/attachments
+      - attachments:/var/lib/bountydeck/attachments
     healthcheck:
       test:
         [
@@ -69,11 +79,12 @@ services:
       retries: 12
 
   worker:
-    <<: *bossob
+    <<: *bountydeck
     restart: unless-stopped
     command: ["node", "--experimental-strip-types", "notifications/worker.ts"]
     environment:
-      BOSSOB_SERVICE: worker
+      BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
+      BOUNTYDECK_SERVICE: worker
       APP_ORIGIN: ${AUTH_URL:?Set AUTH_URL}
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_ALLOW_PLAINTEXT: ${SMTP_ALLOW_PLAINTEXT:-false}
@@ -83,27 +94,29 @@ services:
     secrets: [db_worker_password, smtp_url, internal_ca]
 
   migrate:
-    <<: *bossob
+    <<: *bountydeck
     profiles: [tools]
     restart: "no"
     command: ["node", "db/migrate.ts"]
     environment:
-      BOSSOB_SERVICE: migrate
+      BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
+      BOUNTYDECK_SERVICE: migrate
     secrets: [db_migrate_password]
     networks: [database]
 
   retention:
-    <<: *bossob
+    <<: *bountydeck
     profiles: [tools]
     restart: "no"
     command: ["node", "deploy/retention.ts"]
     environment:
-      BOSSOB_SERVICE: retention
-      ATTACHMENTS_DIR: /var/lib/bossob/attachments
+      BOUNTYDECK_DATABASE: ${BOUNTYDECK_DATABASE:-bountydeck}
+      BOUNTYDECK_SERVICE: retention
+      ATTACHMENTS_DIR: /var/lib/bountydeck/attachments
     secrets: [db_admin_password]
     networks: [database]
     volumes:
-      - attachments:/var/lib/bossob/attachments
+      - attachments:/var/lib/bountydeck/attachments
 
   reverse-proxy:
     image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
@@ -124,7 +137,7 @@ services:
     image: quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41
     profiles: [keycloak]
     restart: unless-stopped
-    entrypoint: ["/bin/bash", "/opt/keycloak/bossob-entrypoint.sh"]
+    entrypoint: ["/bin/bash", "/opt/keycloak/bountydeck-entrypoint.sh"]
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -136,14 +149,16 @@ services:
       KC_HTTP_MANAGEMENT_HOST: 127.0.0.1
       KC_HOSTNAME: ${AUTH_URL:?Set AUTH_URL}/identity
       KC_PROXY_HEADERS: xforwarded
-      KC_BOOTSTRAP_ADMIN_USERNAME: bossob-bootstrap
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_BOOTSTRAP_USER:-bountydeck-bootstrap}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-bountydeck}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-bountydeck}
       AUTH_URL: ${AUTH_URL:?Set AUTH_URL}
       KEYCLOAK_SSL_REQUIRED: ${KEYCLOAK_SSL_REQUIRED:-all}
     networks: [web, database]
     secrets: [db_keycloak_password, keycloak_admin_password, oidc_client_secret]
     volumes:
-      - ./deploy/keycloak-entrypoint.sh:/opt/keycloak/bossob-entrypoint.sh:ro
-      - ./deploy/bossob-realm.json:/opt/keycloak/data/import/bossob-realm.json:ro
+      - ./deploy/keycloak-entrypoint.sh:/opt/keycloak/bountydeck-entrypoint.sh:ro
+      - ./deploy/bountydeck-realm.json:/opt/keycloak/data/import/bountydeck-realm.json:ro
     healthcheck:
       test:
         - CMD

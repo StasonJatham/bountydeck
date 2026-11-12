@@ -327,4 +327,30 @@ export const german: Record<string, string> = {
     "Plattformverwaltung durch Betrieb gewährt",
   "Page not found": "Seite nicht gefunden",
   "Back to home": "Zur Startseite",
+  Integrations: "Integrationen",
+  "Connect a client": "Einen Client verbinden",
+  "Use Authorization Code with PKCE for a user connection or Client Credentials for a provisioned automation identity.":
+    "Verwenden Sie Authorization Code mit PKCE für einen Benutzerzugriff oder Client Credentials für eine bereitgestellte Automatisierungsidentität.",
+  "An operator must configure OAuth integration access.":
+    "Der OAuth-Zugriff für Integrationen muss durch den Betreiber eingerichtet werden.",
+  "REST API": "REST-API",
+  "MCP endpoint": "MCP-Endpunkt",
+  "Token audience": "Token-Zielgruppe",
+  "Required scope": "Erforderlicher Scope",
+  "API documentation": "API-Dokumentation",
+  "Connection example": "Verbindungsbeispiel",
+  "Use your client's OAuth setup to connect to this MCP endpoint.":
+    "Stellen Sie die Verbindung zu diesem MCP-Endpunkt mit der OAuth-Konfiguration Ihres Clients her.",
+  "Agent Skills": "Agent Skills",
+  "Save each SKILL.md in a folder with its skill name, then import that folder into your agent client.":
+    "Speichern Sie jede SKILL.md in einem Ordner mit dem jeweiligen Skill-Namen und importieren Sie diesen Ordner in Ihren Agent-Client.",
+  "Current identity": "Aktuelle Identität",
+  "Platform administrator": "Plattformadministrator",
+  "Program permissions": "Programmberechtigungen",
+  View: "Ansehen",
+  Submit: "Einreichen",
+  "Recent integration activity": "Letzte Integrationsaktivitäten",
+  "No integration activity yet.": "Noch keine Integrationsaktivitäten.",
+  "Automation identity": "Automatisierungsidentität",
+  "Delegated user": "Delegierter Benutzerzugriff",
 };

@@ -4,7 +4,7 @@ Use Docker Engine with Docker Compose v2 or later. The Compose stack uses separa
 
 ## Local Keycloak example
 
-Resolve `bossob.test` to `127.0.0.1` on the browser host, for example by adding `127.0.0.1 bossob.test` to its hosts file. Caddy uses the same hostname on the Compose network, so discovery, callbacks and redirects use a single issuer. The supplied HTTP configuration is for loopback development. Keep `BIND_ADDRESS=127.0.0.1` for this example.
+Resolve `bountydeck.test` to `127.0.0.1` on the browser host, for example by adding `127.0.0.1 bountydeck.test` to its hosts file. Caddy uses the same hostname on the Compose network, so discovery, callbacks and redirects use a single issuer. The supplied HTTP configuration is for loopback development. Keep `BIND_ADDRESS=127.0.0.1` for this example.
 
 ```sh
 cp .env.example .env
@@ -15,11 +15,11 @@ docker compose run --rm migrate
 docker compose --profile keycloak up -d --no-build --wait
 ```
 
-Check the app at `http://bossob.test` and the identity console at `http://bossob.test/identity/admin/`. The initial Keycloak console account is `bossob-bootstrap`. Retrieve its randomly generated password from `secrets/keycloak_admin_password`. In the **bossob** realm, create a user, set their credentials and record their ID from the user details page. That ID is the OIDC subject for the bundled client. Sign in once with the realm user so BountyDeck records the identity. Set the shell variable `subject` to that user ID. Grant platform administration from the migration container:
+Check the app at `http://bountydeck.test` and the identity console at `http://bountydeck.test/identity/admin/`. The initial Keycloak console account is `bountydeck-bootstrap`. Retrieve its randomly generated password from `secrets/keycloak_admin_password`. In the **bountydeck** realm, create a user, set their credentials and record their ID from the user details page. That ID is the OIDC subject for the bundled client. Sign in once with the realm user so BountyDeck records the identity. Set the shell variable `subject` to that user ID. Grant platform administration from the migration container:
 
 ```sh
 docker compose run --rm migrate node db/grant-admin.ts \
-  oidc:http://bossob.test/identity/realms/bossob "$subject"
+  oidc:http://bountydeck.test/identity/realms/bountydeck "$subject"
 ```
 
 Give Keycloak administrators individual accounts and remove the temporary Keycloak console account.
@@ -33,9 +33,9 @@ Run this only with an empty local Compose application database. Start the local 
 ```sh
 docker compose -f compose.yaml -f deploy/compose.test.yaml --profile keycloak up -d --no-build --wait
 ./deploy/provision-test-identity.sh
-BOSSOB_DEMO_FIXTURES=1 \
-  DEMO_DATABASE_URL="postgresql://postgres:$(cat secrets/db_admin_password)@127.0.0.1:55432/bossob" \
-  OIDC_ISSUER=http://bossob.test/identity/realms/bossob npm run seed-demo
+BOUNTYDECK_DEMO_FIXTURES=1 \
+  DEMO_DATABASE_URL="postgresql://postgres:$(cat secrets/db_admin_password)@127.0.0.1:55432/bountydeck" \
+  OIDC_ISSUER=http://bountydeck.test/identity/realms/bountydeck npm run seed-demo
 ```
 
 The fixture usernames are `local-platform-admin`, `local-manager`, `local-triager`, `local-researcher`, and `local-outsider`. Their randomly generated password lives in `secrets/test_user_password`. The regular realm import has no fixture users.
@@ -43,7 +43,7 @@ The fixture usernames are `local-platform-admin`, `local-manager`, `local-triage
 ## Private TLS deployment
 
 1. Allocate a DNS name such as `bounty.example.internal`. Point clients at the deployment host.
-2. Set `APP_HOSTNAME=bounty.example.internal`, `AUTH_URL=https://bounty.example.internal`, `CADDY_SITE=https://bounty.example.internal`, and `BIND_ADDRESS` to the intended host interface. For the bundled Keycloak set `OIDC_ISSUER=https://bounty.example.internal/identity/realms/bossob` and `KEYCLOAK_SSL_REQUIRED=all`.
+2. Set `APP_HOSTNAME=bounty.example.internal`, `AUTH_URL=https://bounty.example.internal`, `CADDY_SITE=https://bounty.example.internal`, and `BIND_ADDRESS` to the intended host interface. For the bundled Keycloak set `OIDC_ISSUER=https://bounty.example.internal/identity/realms/bountydeck` and `KEYCLOAK_SSL_REQUIRED=all`.
 3. Place the certificate chain and key issued by your internal CA at `secrets/tls_cert.pem` and `secrets/tls_key.pem`. Make them readable by the Caddy container and keep the enclosing host directory private. Install the CA on clients. Add the CA chain to `secrets/internal_ca.pem` so Node can verify HTTPS connections to the issuer and private notification servers.
 4. Run the installation commands above with `docker compose -f compose.yaml -f deploy/compose.tls.yaml`. Recreate the affected containers after replacing a bind-mounted secret file. TLS uses the provisioned certificate and does not require a public ACME server.
 
@@ -86,11 +86,11 @@ mkdir -p backups
 docker compose stop application worker
 # Also stop Keycloak if enabled.
 docker compose --profile keycloak stop keycloak
-docker compose exec -T postgres pg_dump -U postgres -Fc bossob > backups/bossob.dump
+docker compose exec -T postgres pg_dump -U postgres -Fc bountydeck > backups/bountydeck.dump
 # Run only if Keycloak is enabled.
 docker compose exec -T postgres pg_dump -U postgres -Fc keycloak > backups/keycloak.dump
 docker compose run --rm --no-deps --entrypoint tar application \
-  -C /var/lib/bossob/attachments -cf - . > backups/attachments.tar
+  -C /var/lib/bountydeck/attachments -cf - . > backups/attachments.tar
 docker compose --profile keycloak up -d --no-build --wait
 ```
 
@@ -101,12 +101,12 @@ Restore into a fresh stack or a separate Compose project with unused ports. Init
 ```sh
 docker compose up -d --wait postgres
 docker compose exec -T postgres pg_restore -U postgres --exit-on-error --single-transaction \
-  -d bossob < backups/bossob.dump
+  -d bountydeck < backups/bountydeck.dump
 # Run only if Keycloak is enabled.
 docker compose exec -T postgres pg_restore -U postgres --exit-on-error --single-transaction \
   -d keycloak < backups/keycloak.dump
 docker compose run --rm -T --no-deps --entrypoint tar application \
-  -C /var/lib/bossob/attachments -xf - < backups/attachments.tar
+  -C /var/lib/bountydeck/attachments -xf - < backups/attachments.tar
 docker compose run --rm migrate
 docker compose --profile keycloak up -d --no-build --wait
 ```
@@ -122,3 +122,18 @@ Build the application and pull the pinned service images on a connected machine 
 ## Language
 
 BountyDeck offers English and German in its language selector. The bundled realm enables both languages for new installations. For an existing Keycloak realm, enable internationalization under Realm settings and add English and German as supported locales. BountyDeck passes the chosen language to the identity provider during sign-in.
+
+## Upgrade an installation created before the naming update
+
+Keep the existing hostname, OIDC issuer, and client ID in your `.env`. The issuer is part of each account's identity. Keep your existing Compose project name and database so Compose continues using the same volumes. If your installation used the original defaults, add these settings before rebuilding:
+
+```dotenv
+COMPOSE_PROJECT_NAME=bossob
+BOUNTYDECK_DATABASE=bossob
+KEYCLOAK_REALM=bossob
+KEYCLOAK_BOOTSTRAP_USER=bossob-bootstrap
+```
+
+If you used a different project or database name, substitute the values from your installation. Rename the optional `BOSSOB_IMAGE` override to `BOUNTYDECK_IMAGE`. For database backups and restores, use your configured database name. The named attachment volume mounts at `/var/lib/bountydeck/attachments`.
+
+Existing PostgreSQL role names are retained for migration compatibility. Webhooks send the documented `X-BountyDeck-*` headers and the previous header names so existing receivers can migrate at their own pace.

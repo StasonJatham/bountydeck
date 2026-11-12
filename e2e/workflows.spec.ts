@@ -284,7 +284,7 @@ test("SMTP and signed HTTPS notifications retry and record attempts", async ({
     "Requires the local notification fixture",
   );
   const recipient = "browser-notification@example.invalid";
-  const endpoint = "https://notify-fixture.bossob.test:8443/report";
+  const endpoint = "https://notify-fixture.bountydeck.test:8443/report";
   const manager = await login(browser, baseURL, "local-manager");
   const settings = `/programs/${program}/manage/notifications`;
   await manager.goto(settings);

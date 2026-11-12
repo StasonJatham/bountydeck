@@ -32,3 +32,16 @@ E2E_NOTIFICATION_FIXTURE=1 npm run e2e
 Use this overlay only with the disposable fixture deployment. Its self-signed receiver certificate and HMAC are generated locally.
 
 Use a fresh fixture deployment for repeated acceptance runs. The fixture researcher is subject to the same hourly submission limit as every other account.
+
+## REST and MCP
+
+Run `npx vitest run lib/integrations/openapi.test.ts lib/integration-skills.test.ts` to check generated contracts and skill packages. Gitea runs these checks on pushes and pull requests.
+
+For real OAuth tests, start the disposable Keycloak fixture, provision its integration clients with `./deploy/provision-test-integrations.sh`, and enable the canonical `http://bountydeck.test/mcp` audience, HTTP fixture mode, and the generated service binding in the application container. Use the loopback database from the Compose test override. Then run:
+
+```sh
+RUN_INTEGRATION_AUTH_FIXTURE=1 RUN_INTEGRATION_HTTP_FIXTURE=1 \
+  INTEGRATION_CHROME_CHANNEL=chrome npx vitest run lib/integrations/auth.integration.test.ts
+```
+
+The test uses real OAuth exchanges and disposable case records. It verifies browser, REST, and MCP access, record isolation, idempotent writes, scoring, audit history, notification queue effects, and revocation.

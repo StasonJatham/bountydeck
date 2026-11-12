@@ -16,7 +16,7 @@ test.skipIf(!connectionString)(
       { length: 7 },
       () => randomUUID(),
     );
-    const directory = await mkdtemp(join(tmpdir(), "bossob-retention-"));
+    const directory = await mkdtemp(join(tmpdir(), "bountydeck-retention-"));
     const client = new Client({ connectionString });
     await client.connect();
     const run = (...args: string[]) =>

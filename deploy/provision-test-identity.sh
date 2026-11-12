@@ -15,7 +15,7 @@ fi
 
 node --input-type=commonjs <<'JS' | docker compose --profile keycloak exec -T keycloak bash -c '
   set -euo pipefail
-  if [[ "$KC_HOSTNAME" != "http://bossob.test/identity" ]]; then
+  if [[ "$KC_HOSTNAME" != "http://bountydeck.test/identity" ]]; then
     echo "Expected the local Keycloak test issuer." >&2
     exit 1
   fi
@@ -23,8 +23,8 @@ node --input-type=commonjs <<'JS' | docker compose --profile keycloak exec -T ke
   trap "rm -f \"$config\"" EXIT
   kcadm=/opt/keycloak/bin/kcadm.sh
   "$kcadm" config credentials --config "$config" --server http://localhost:8080/identity \
-    --realm master --user bossob-bootstrap --password "$(cat /run/secrets/keycloak_admin_password)"
-  "$kcadm" create partialImport --config "$config" -r bossob -f -
+    --realm master --user bountydeck-bootstrap --password "$(cat /run/secrets/keycloak_admin_password)"
+  "$kcadm" create partialImport --config "$config" -r bountydeck -f -
 '
 const { readFileSync } = require("node:fs");
 const password = readFileSync("secrets/test_user_password", "utf8").trim();

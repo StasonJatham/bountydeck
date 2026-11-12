@@ -9,3 +9,7 @@ The schema uses immutable report events and score ledger records. A report lock 
 Evidence is private and downloaded after authorization. The API returns evidence and exports as downloads, with no shared caching. The export operation records an audit event. Keep database and evidence backups on the same retention schedule. The deployment guide describes the required backup boundary.
 
 PostgreSQL triggers enqueue minimized notification records in the same transaction as report changes. A restricted worker takes row locks with `SKIP LOCKED`, delivers with bounded retries, and records attempts. Consumers should deduplicate by event ID. Webhook HTTPS origins and resolved addresses must match operator-approved destinations. The worker connects to a verified address with TLS hostname validation and rejects redirects.
+
+## External integrations
+
+REST and MCP accept OAuth access tokens and resolve the issuer and subject to an existing actor. Both transports use the same operation registry and actor-scoped transactions as the browser. The registry provides input validation and OpenAPI generation. Token credentials, report text, and evidence bytes stay out of integration audit entries.

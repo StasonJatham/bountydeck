@@ -10,9 +10,9 @@ Set `WEBHOOK_DESTINATIONS` to a JSON map of approved HTTPS origins and expected 
 
 Webhook requests use these headers:
 
-- `X-Bossob-Event-Id` identifies the delivery across retries.
-- `X-Bossob-Timestamp` carries the Unix timestamp of the attempt in seconds.
-- `X-Bossob-Signature` carries `sha256=` followed by the lowercase hexadecimal HMAC-SHA256 of the timestamp, a period, and the raw request body.
+- `X-BountyDeck-Event-Id` identifies the delivery across retries.
+- `X-BountyDeck-Timestamp` carries the Unix timestamp of the attempt in seconds.
+- `X-BountyDeck-Signature` carries `sha256=` followed by the lowercase hexadecimal HMAC-SHA256 of the timestamp, a period, and the raw request body.
 
 Receivers should verify the signature, check timestamp freshness, and deduplicate by event ID. Deliveries are at least once. A crash after an endpoint accepts a request but before the worker commits can repeat the request. Email has a stable Message-ID across retries.
 

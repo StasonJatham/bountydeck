@@ -18,8 +18,8 @@ httpsServer(
     const buffers = [];
     for await (const chunk of request) buffers.push(chunk);
     const body = Buffer.concat(buffers).toString("utf8");
-    const event = request.headers["x-bossob-event-id"];
-    const timestamp = request.headers["x-bossob-timestamp"];
+    const event = request.headers["x-bountydeck-event-id"];
+    const timestamp = request.headers["x-bountydeck-timestamp"];
     const signature = createHmac("sha256", secret)
       .update(`${timestamp}.${body}`)
       .digest("hex");
@@ -27,7 +27,7 @@ httpsServer(
       request.method !== "POST" ||
       request.url !== "/report" ||
       !event ||
-      request.headers["x-bossob-signature"] !== `sha256=${signature}` ||
+      request.headers["x-bountydeck-signature"] !== `sha256=${signature}` ||
       !JSON.parse(body).report ||
       body.includes("Synthetic confidential report")
     ) {
@@ -42,7 +42,7 @@ httpsServer(
 const messages = new Set();
 smtpServer((socket) => {
   socket.setEncoding("utf8");
-  socket.write("220 Bossob test SMTP\r\n");
+  socket.write("220 BountyDeck test SMTP\r\n");
   let pending = "";
   let data = false;
   let event;

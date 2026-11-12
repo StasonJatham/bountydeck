@@ -1,7 +1,7 @@
 import localFont from "next/font/local";
 import { getI18n } from "../lib/i18n";
 import { cookies } from "next/headers";
-import { parseTheme, themeCookie } from "../lib/theme";
+import { readTheme } from "../lib/theme";
 import type { ReactNode } from "react";
 import "./style.css";
 
@@ -27,7 +27,7 @@ export async function generateMetadata() {
 }
 
 export default async function Layout({ children }: { children: ReactNode }) {
-  const theme = parseTheme((await cookies()).get(themeCookie)?.value);
+  const theme = readTheme(await cookies());
   const { locale } = await getI18n();
   return (
     <html

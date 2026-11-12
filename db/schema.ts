@@ -346,3 +346,19 @@ export const platformSettings = pgTable("platform_settings", {
   reportExports: boolean("report_exports").notNull().default(true),
   globalLeaderboard: boolean("global_leaderboard").notNull().default(true),
 });
+
+export const integrationAudit = pgTable("integration_audit", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actorId: uuid("actor_id")
+    .notNull()
+    .references(() => users.id),
+  actorType: text("actor_type", { enum: ["delegated", "service"] }).notNull(),
+  clientId: text("client_id").notNull(),
+  operation: text("operation").notNull(),
+  resourceId: text("resource_id"),
+  programId: uuid("program_id"),
+  organizationId: uuid("organization_id"),
+  requestId: uuid("request_id").notNull(),
+  outcome: integer("outcome").notNull(),
+  createdAt: date("created_at").notNull().defaultNow(),
+});

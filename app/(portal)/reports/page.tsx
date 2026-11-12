@@ -2,9 +2,9 @@ import { getI18n } from "../../../lib/i18n";
 import { Button } from "../../../components/ui/button";
 import { ReportBadge } from "../../../components/report-badge";
 import Link from "next/link";
-import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { withActor } from "../../../db";
-import { programs, reports } from "../../../db/schema";
+import { listReports } from "../../../lib/integrations/reports";
 import { requireActor } from "../../../lib/actor";
 import { Field, input } from "../../../lib/forms";
 import { severities, transitions, type Status } from "../../../lib/workflow";
@@ -24,46 +24,33 @@ export default async function Reports({
   const severity = severities.find((value) => value === query.severity);
   const before = Number(query.before);
   const oldestFirst = query.sort === "oldest";
-  const { rows, canTriage } = await withActor(actor, async (tx) => {
-    const [{ canTriage }] = (
-      await tx.execute<{ canTriage: boolean }>(
-        sql`select exists (select from programs where app_reviews_program(id)) as "canTriage"`,
-      )
-    ).rows;
-    const rows = await tx
-      .select({
-        id: reports.id,
-        title: reports.title,
-        status: reports.status,
-        number: reports.number,
-        severity: sql<string>`coalesce(${reports.severity}, ${reports.proposedSeverity})`,
-        program: programs.name,
-      })
-      .from(reports)
-      .leftJoin(programs, eq(reports.programId, programs.id))
-      .where(
-        and(
-          inbox
-            ? sql`app_reviews_program(${reports.programId})`
-            : eq(reports.reporterId, actor),
-          status && eq(reports.status, status),
-          severity &&
-            sql`coalesce(${reports.severity}, ${reports.proposedSeverity}) = ${severity}`,
-          Number.isSafeInteger(before) && before > 0
-            ? (oldestFirst ? gt : lt)(reports.number, before)
-            : undefined,
-        ),
-      )
-      .orderBy((oldestFirst ? asc : desc)(reports.number))
-      .limit(31);
-    return { rows, canTriage };
-  });
+  const [{ items: rows, nextCursor }, canTriage] = await Promise.all([
+    listReports(actor, {
+      view: inbox ? "inbox" : "mine",
+      sort: oldestFirst ? "oldest" : "newest",
+      status,
+      severity,
+      cursor:
+        Number.isInteger(before) && before > 0 && before <= 2147483647
+          ? before
+          : undefined,
+    }),
+    withActor(
+      actor,
+      async (tx) =>
+        (
+          await tx.execute<{ canTriage: boolean }>(
+            sql`select exists (select from programs where app_reviews_program(id)) as "canTriage"`,
+          )
+        ).rows[0].canTriage,
+    ),
+  ]);
   const next = new URLSearchParams({
     view: inbox ? "inbox" : "mine",
     sort: oldestFirst ? "oldest" : "newest",
     status: status ?? "",
     severity: severity ?? "",
-    before: String(rows[29]?.number ?? ""),
+    before: String(nextCursor ?? ""),
   });
   return (
     <>
@@ -154,7 +141,7 @@ export default async function Reports({
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {rows.slice(0, 30).map((report) => (
+              {rows.map((report) => (
                 <tr key={report.id} className="hover:bg-subtle/50">
                   <td className="px-4 py-2.5">
                     <Link
@@ -188,7 +175,7 @@ export default async function Reports({
           </p>
         )}
       </div>
-      {rows.length > 30 && (
+      {nextCursor !== null && (
         <Link className="mt-4 inline-block underline" href={`/reports?${next}`}>
           {t("Next page")}
         </Link>

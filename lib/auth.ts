@@ -1,4 +1,4 @@
-import { parseTheme, themeCookie } from "./theme";
+import { readTheme } from "./theme";
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { readFileSync } from "node:fs";
@@ -17,7 +17,7 @@ declare module "next-auth" {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth((request) => {
-  const theme = parseTheme(request?.cookies.get(themeCookie)?.value);
+  const theme = readTheme(request?.cookies);
   const issuer = process.env.OIDC_ISSUER;
   const provider = `oidc:${issuer}`;
   const adapter = DrizzleAdapter(db, {

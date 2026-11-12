@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  output: process.env.BOSSOB_STANDALONE === "1" ? "standalone" : undefined,
+  output: process.env.BOUNTYDECK_STANDALONE === "1" ? "standalone" : undefined,
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "6mb" } },
   async headers() {

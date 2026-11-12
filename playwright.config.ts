@@ -5,10 +5,10 @@ export default defineConfig({
   workers: 1,
   timeout: 90000,
   use: {
-    baseURL: process.env.E2E_ORIGIN ?? "http://bossob.test",
+    baseURL: process.env.E2E_ORIGIN ?? "http://bountydeck.test",
     actionTimeout: 10000,
     launchOptions: {
-      args: ["--host-resolver-rules=MAP bossob.test 127.0.0.1"],
+      args: ["--host-resolver-rules=MAP bountydeck.test 127.0.0.1"],
       ...(process.env.E2E_USE_SYSTEM_CHROME === "1"
         ? { channel: "chrome" }
         : {}),

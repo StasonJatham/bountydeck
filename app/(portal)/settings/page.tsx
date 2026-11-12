@@ -26,6 +26,15 @@ export default async function Settings() {
             {t("Researcher profile")}
           </Link>
         </section>
+        <section className={panel}>
+          <h2 className="font-semibold">{t("Integrations")}</h2>
+          <Link
+            className="mt-3 inline-block text-sm font-medium text-accent underline"
+            href="/integrations"
+          >
+            {t("Connect a client")}
+          </Link>
+        </section>
       </div>
     </>
   );

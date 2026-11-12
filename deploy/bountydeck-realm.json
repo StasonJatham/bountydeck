@@ -1,5 +1,5 @@
 {
-  "realm": "bossob",
+  "realm": "${KEYCLOAK_REALM}",
   "displayName": "BountyDeck",
   "enabled": true,
   "internationalizationEnabled": true,
@@ -12,7 +12,7 @@
   "sslRequired": "${KEYCLOAK_SSL_REQUIRED}",
   "clients": [
     {
-      "clientId": "bossob",
+      "clientId": "${OIDC_CLIENT_ID}",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
@@ -20,7 +20,7 @@
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
-      "secret": "${BOSSOB_OIDC_CLIENT_SECRET}",
+      "secret": "${BOUNTYDECK_OIDC_CLIENT_SECRET}",
       "redirectUris": ["${AUTH_URL}/api/auth/callback/oidc"],
       "webOrigins": ["${AUTH_URL}"],
       "attributes": { "pkce.code.challenge.method": "S256" }

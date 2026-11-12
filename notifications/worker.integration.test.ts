@@ -64,7 +64,7 @@ it.skipIf(!adminUrl || !workerUrl)(
         {
           env: {
             ...process.env,
-            APP_ORIGIN: "http://bossob.test",
+            APP_ORIGIN: "http://bountydeck.test",
             WORKER_DATABASE_URL: workerUrl,
             SMTP_URL: `smtp://127.0.0.1:${address.port}`,
             SMTP_FROM: "fixture@internal.example",
@@ -135,7 +135,7 @@ it.skipIf(!adminUrl || !workerUrl)(
       ]);
       expect(received).toHaveLength(2);
       for (const message of received)
-        expect(message).toContain(`Message-ID: <${job}@bossob.test>`);
+        expect(message).toContain(`Message-ID: <${job}@bountydeck.test>`);
     } finally {
       await Promise.all(
         workers.map(async (worker) => {

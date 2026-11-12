@@ -9,10 +9,10 @@ async function main() {
   if (
     !connectionString ||
     !issuer ||
-    process.env.BOSSOB_DEMO_FIXTURES !== "1"
+    process.env.BOUNTYDECK_DEMO_FIXTURES !== "1"
   ) {
     throw new Error(
-      "Set DEMO_DATABASE_URL, OIDC_ISSUER and BOSSOB_DEMO_FIXTURES=1 for a disposable demo database",
+      "Set DEMO_DATABASE_URL, OIDC_ISSUER and BOUNTYDECK_DEMO_FIXTURES=1 for a disposable demo database",
     );
   }
 

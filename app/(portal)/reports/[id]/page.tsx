@@ -2,7 +2,7 @@ import { ReportBadge } from "../../../../components/report-badge";
 import { getI18n } from "../../../../lib/i18n";
 import { Button } from "../../../../components/ui/button";
 import { uploadEvidence } from "../../../../lib/attachment-actions";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Markdown from "react-markdown";
 import { z } from "zod";
@@ -13,7 +13,6 @@ import {
   reportAttachments,
   reportComments,
   reportEvents,
-  reports,
   scoreEvents,
   users,
 } from "../../../../db/schema";
@@ -25,6 +24,7 @@ import {
   correctScore,
   transition,
 } from "../../../../lib/report-actions";
+import { readReport, ReportError } from "../../../../lib/integrations/reports";
 import { severities, transitions } from "../../../../lib/workflow";
 
 export default async function Report({
@@ -49,15 +49,10 @@ export default async function Report({
     awards,
     settings,
   } = await withActor(actor, async (tx) => {
-    const [row] = await tx
-      .select({
-        report: reports,
-        reviewer: sql<boolean>`app_reviews_program(${reports.programId})`,
-        manager: sql<boolean>`app_manages_program(${reports.programId})`,
-      })
-      .from(reports)
-      .where(eq(reports.id, id));
-    if (!row) notFound();
+    const row = await readReport(tx, id).catch((error: unknown) => {
+      if (error instanceof ReportError && error.status === 404) notFound();
+      throw error;
+    });
     const comments = await tx
       .select()
       .from(reportComments)

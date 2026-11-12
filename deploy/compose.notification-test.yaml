@@ -1,5 +1,5 @@
 # Disposable integration stack only. Pair with compose.test.yaml.
-x-destinations: &destinations '{"https://notify-fixture.bossob.test:8443":["192.168.247.10"]}'
+x-destinations: &destinations '{"https://notify-fixture.bountydeck.test:8443":["192.168.247.10"]}'
 services:
   application:
     environment:
@@ -20,7 +20,7 @@ services:
     networks:
       notification_test:
         ipv4_address: 192.168.247.10
-        aliases: [notify-fixture.bossob.test]
+        aliases: [notify-fixture.bountydeck.test]
 networks:
   notification_test:
     internal: true
