@@ -33,6 +33,8 @@ E2E_NOTIFICATION_FIXTURE=1 npm run e2e
 
 Use this overlay only with the disposable fixture deployment. Its self-signed receiver certificate and HMAC are generated locally.
 
+To include anonymous submission and triage, start the fixture application with `BOUNTYDECK_GUEST_REPORTS=true` and run `E2E_GUEST_REPORTS=1 npm run e2e`. Use `E2E_ORIGIN` if your local fixture uses a different origin.
+
 Use a fresh fixture deployment for repeated acceptance runs. The fixture researcher is subject to the same hourly submission limit as every other account.
 
 ## REST and MCP

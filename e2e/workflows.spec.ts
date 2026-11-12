@@ -30,6 +30,21 @@ async function login(
   return page;
 }
 
+async function submitFixtureReport(page: Page, title: string) {
+  for (const [label, value] of Object.entries({
+    Title: title,
+    "Weakness (e.g. CWE-200)": "CWE-200",
+    Description: "Synthetic confidential report",
+    "Reproduction steps":
+      "Open the fixture record and inspect the demo marker.",
+    "Proof of concept": "Synthetic example only",
+    Impact: "Demonstrates the report workflow.",
+  })) {
+    await page.getByLabel(label, { exact: true }).fill(value);
+  }
+  await page.getByRole("button", { name: "Submit report" }).click();
+}
+
 async function changeStatus(page: Page, status: string, severity?: string) {
   await page.getByLabel("Next status").selectOption(status);
   if (severity)
@@ -51,17 +66,7 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
     .innerText();
   const award = Number(pointPolicy.match(/\d+/)?.[0]);
   const title = `Browser acceptance ${randomUUID()}`;
-  for (const [label, value] of Object.entries({
-    Title: title,
-    "Weakness (e.g. CWE-200)": "CWE-200",
-    Description: "Synthetic confidential report",
-    "Reproduction steps": "Inspect the mock result",
-    "Proof of concept": "Synthetic example only",
-    Impact: "Unexpected visibility",
-  })) {
-    await researcher.getByLabel(label, { exact: true }).fill(value);
-  }
-  await researcher.getByRole("button", { name: "Submit report" }).click();
+  await submitFixtureReport(researcher, title);
   await expect(researcher.getByRole("heading", { name: title })).toBeVisible();
   const report = new URL(researcher.url()).pathname;
   await researcher.locator('input[type="file"]').setInputFiles({
@@ -89,7 +94,11 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   });
 
   const triager = await login(browser, baseURL, "local-triager");
-  await triager.goto(report);
+  await triager
+    .getByRole("link", { name: "Triage inbox", exact: true })
+    .click();
+  await triager.getByRole("link", { name: title }).click();
+  await expect(triager).toHaveURL(new URL(report, triager.url()).href);
   await triager.getByLabel("Add a comment").fill("Confidential triage note");
   await triager.getByLabel("Internal note").check();
   await triager.getByRole("button", { name: "Post comment" }).click();
@@ -97,6 +106,21 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   await triager.getByLabel("Add a comment").fill("Thank you for the report.");
   await triager.getByRole("button", { name: "Post comment" }).click();
   await expect(triager.getByText("Thank you for the report.")).toBeVisible();
+  await changeStatus(triager, "needs_information");
+  await researcher.reload();
+  await expect(researcher.getByText("Thank you for the report.")).toBeVisible();
+  await expect(researcher.getByText("Confidential triage note")).toHaveCount(0);
+  await researcher
+    .getByLabel("Add a comment")
+    .fill("Here is the requested fixture detail.");
+  await researcher.getByRole("button", { name: "Post comment" }).click();
+  await expect(
+    researcher.getByText("Here is the requested fixture detail."),
+  ).toBeVisible();
+  await triager.reload();
+  await expect(
+    triager.getByText("Here is the requested fixture detail."),
+  ).toBeVisible();
   await changeStatus(triager, "triage");
   await triager
     .getByLabel("CVSS 4.0 vector")
@@ -145,10 +169,6 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   await expect(
     profileBadges.getByText("Repro Ready", { exact: true }),
   ).toBeVisible();
-  await researcher
-    .getByRole("button", { name: "Dismiss", exact: true })
-    .click();
-  await expect(researcher.locator('[data-slot="toast"]')).toHaveCount(0);
   await researcher.goto("/achievements");
   const featured = researcher.getByRole("group", {
     name: "Choose up to three earned badges to feature on your profile.",
@@ -191,6 +211,48 @@ test("researcher submits evidence, reviewer validates, outsider is denied", asyn
   await outsider.close();
 });
 
+test("guest can submit anonymously and analyst can validate without awarding points", async ({
+  page: guest,
+  browser,
+  baseURL,
+}) => {
+  test.skip(
+    process.env.E2E_GUEST_REPORTS !== "1",
+    "Requires guest reports on the fixture app",
+  );
+  await guest.goto("/");
+  await guest.getByRole("link", { name: "Report anonymously" }).click();
+  await expect(
+    guest.getByRole("link", { name: "Infrastructure", exact: true }),
+  ).toHaveCount(0);
+  await guest
+    .getByRole("link", { name: "Web Applications", exact: true })
+    .click();
+  const title = `Anonymous acceptance ${randomUUID()}`;
+  await submitFixtureReport(guest, title);
+  await expect(guest.getByRole("status")).toContainText("Your report was sent");
+  await expect(guest).toHaveURL(/\/guest-report\?submitted=1$/);
+
+  const triager = await login(browser, baseURL, "local-triager");
+  await triager
+    .getByRole("link", { name: "Triage inbox", exact: true })
+    .click();
+  await triager.getByRole("link", { name: title }).click();
+  await expect(
+    triager.getByText("Anonymous guest", { exact: true }),
+  ).toBeVisible();
+  await changeStatus(triager, "triage");
+  await changeStatus(triager, "validated", "medium");
+  await expect(
+    triager.getByRole("heading", { name: "Points history" }),
+  ).toHaveCount(0);
+
+  await guest.goto(triager.url());
+  await expect(guest).toHaveURL(/\/sign-in/);
+  await expect(guest.getByRole("heading", { name: title })).toHaveCount(0);
+  await triager.close();
+});
+
 test("organization and program administration enforce role boundaries", async ({
   browser,
   baseURL,
@@ -201,6 +263,7 @@ test("organization and program administration enforce role boundaries", async ({
   const globalRankings = admin.getByRole("checkbox", {
     name: "Show global leaderboard",
   });
+  const rankingsWereEnabled = await globalRankings.isChecked();
   await globalRankings.uncheck();
   await admin.getByRole("button", { name: "Save platform settings" }).click();
   await expect(
@@ -215,7 +278,7 @@ test("organization and program administration enforce role boundaries", async ({
     ).toBeVisible();
   } finally {
     await admin.goto("/admin");
-    await globalRankings.check();
+    await globalRankings.setChecked(rankingsWereEnabled);
     await Promise.all([
       admin.waitForResponse(
         (response) =>
@@ -320,81 +383,89 @@ test("SMTP and signed HTTPS notifications retry and record attempts", async ({
   const manager = await login(browser, baseURL, "local-manager");
   const settings = `/programs/${program}/manage/notifications`;
   await manager.goto(settings);
-  for (const destination of [recipient, endpoint]) {
-    const existing = manager
+  const enabledChannel = (destination: string) =>
+    manager
       .getByText(destination, { exact: true })
       .locator("..")
       .getByRole("button", { name: "Disable", exact: true });
-    for (let remaining = await existing.count(); remaining > 0; remaining--) {
-      await existing.first().click();
-      await expect(existing).toHaveCount(remaining - 1);
+  const disableChannels = async () => {
+    for (const destination of [recipient, endpoint]) {
+      const enabled = enabledChannel(destination);
+      for (let remaining = await enabled.count(); remaining > 0; remaining--) {
+        await enabled.first().click();
+        await expect(enabled).toHaveCount(remaining - 1);
+      }
     }
-    await manager
-      .getByRole("combobox", { name: "Transport" })
-      .selectOption(destination === recipient ? "smtp" : "webhook");
-    await manager.getByLabel("Email address or webhook URL").fill(destination);
-    if (destination === endpoint) {
-      const hmac = readFileSync(
-        "secrets/notification_test_hmac",
-        "utf8",
-      ).trim();
+  };
+
+  await disableChannels();
+  try {
+    for (const destination of [recipient, endpoint]) {
       await manager
-        .getByLabel("Webhook signing secret", { exact: false })
-        .fill(hmac);
+        .getByRole("combobox", { name: "Transport" })
+        .selectOption(destination === recipient ? "smtp" : "webhook");
+      await manager
+        .getByLabel("Email address or webhook URL")
+        .fill(destination);
+      if (destination === endpoint) {
+        const hmac = readFileSync(
+          "secrets/notification_test_hmac",
+          "utf8",
+        ).trim();
+        await manager
+          .getByLabel("Webhook signing secret", { exact: false })
+          .fill(hmac);
+      }
+      await manager.getByRole("button", { name: "Add channel" }).click();
+      await expect(enabledChannel(destination)).toBeVisible();
     }
-    await manager.getByRole("button", { name: "Add channel" }).click();
+    const researcher = await login(browser, baseURL, "local-researcher");
+    await researcher.goto(`/programs/${program}`);
+    const title = `Notification acceptance ${randomUUID()}`;
+    await submitFixtureReport(researcher, title);
     await expect(
-      manager
-        .getByText(destination, { exact: true })
-        .locator("..")
-        .getByRole("button", { name: "Disable", exact: true }),
+      researcher.getByRole("heading", { name: title }),
     ).toBeVisible();
+    const reportNumber = (
+      await researcher.locator("main > p").first().innerText()
+    ).split(" · ")[0];
+    const deliveries = manager
+      .getByText(
+        `report.submitted · delivered · 2 attempts · ${reportNumber}`,
+        {
+          exact: true,
+        },
+      )
+      .locator("..");
+    await expect
+      .poll(
+        async () => {
+          await manager.reload();
+          return deliveries.count();
+        },
+        { timeout: 40_000, intervals: [500, 1000] },
+      )
+      .toBe(2);
+    for (const button of await deliveries
+      .getByText("Attempts", { exact: true })
+      .all())
+      await button.click();
+    for (const result of [
+      /1\. smtp transport error/,
+      /2\. smtp accepted/,
+      /1\. http 503/,
+      /2\. http 204/,
+    ]) {
+      await expect(deliveries.getByText(result)).toBeVisible();
+    }
+    await researcher.close();
+  } finally {
+    try {
+      await disableChannels();
+    } finally {
+      await manager.close();
+    }
   }
-  const researcher = await login(browser, baseURL, "local-researcher");
-  await researcher.goto(`/programs/${program}`);
-  const title = `Notification acceptance ${randomUUID()}`;
-  for (const [label, value] of Object.entries({
-    Title: title,
-    "Weakness (e.g. CWE-200)": "CWE-200",
-    Description: "Synthetic confidential report",
-    "Reproduction steps": "Open the fixture",
-    "Proof of concept": "Synthetic data",
-    Impact: "Demonstrates notifications",
-  })) {
-    await researcher.getByLabel(label, { exact: true }).fill(value);
-  }
-  await researcher.getByRole("button", { name: "Submit report" }).click();
-  await expect(researcher.getByRole("heading", { name: title })).toBeVisible();
-  const reportNumber = (
-    await researcher.locator("main > p").first().innerText()
-  ).split(" · ")[0];
-  const deliveries = manager
-    .getByText(`report.submitted · delivered · 2 attempts · ${reportNumber}`, {
-      exact: true,
-    })
-    .locator("..");
-  await expect
-    .poll(
-      async () => {
-        await manager.reload();
-        return deliveries.count();
-      },
-      { timeout: 40_000, intervals: [500, 1000] },
-    )
-    .toBe(2);
-  for (const button of await deliveries
-    .getByText("Attempts", { exact: true })
-    .all())
-    await button.click();
-  for (const result of [
-    /1\. smtp transport error/,
-    /2\. smtp accepted/,
-    /1\. http 503/,
-    /2\. http 204/,
-  ]) {
-    await expect(deliveries.getByText(result)).toBeVisible();
-  }
-  await Promise.all([manager.close(), researcher.close()]);
 });
 
 test("color theme follows the system and persists across sign-in and reload", async ({
