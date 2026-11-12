@@ -27,7 +27,7 @@ All services use no-new-privileges and the engine's default seccomp policy. Only
 | Worker | 1000 | None | Read-only, bounded temporary tmpfs | worker, database | 1 / 512 MiB / 128 / 4096 | Container state, delivery covered by smoke tests |
 | Migration | 1000 | None | Read-only, bounded temporary tmpfs | database | 1 / 512 MiB / 128 / 4096 | One-shot exit status |
 | Retention | 1000 | None | Read-only, attachments volume, bounded temporary tmpfs | database | 1 / 512 MiB / 128 / 4096 | One-shot exit status |
-| PostgreSQL | Upstream initializer then postgres (70) | Initializer CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID. The database process has zero effective capabilities after initialization. | Read-only, data volume, socket and temporary tmpfs | database | 2 / 1 GiB / 256 / 8192 | pg_isready |
+| PostgreSQL | Upstream initializer then postgres (70) | Initializer CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID. The startup helper switches to UID 70, and the database process has zero effective capabilities. | Read-only, data volume, socket and temporary tmpfs | database | 2 / 1 GiB / 256 / 8192 | pg_isready |
 | Keycloak | 1000 | None | Writable upstream distribution for production build-on-start, read-only realm/config binds | identity, database | 2 / 1.5 GiB / 512 / 8192 | Loopback management readiness |
 | Caddy | Upstream UID 0 | NET_BIND_SERVICE for legacy low listeners | Read-only, private data and config volumes, read-only configuration | web, identity | 1 / 256 MiB / 128 / 8192 | Container state plus external readiness check |
 
@@ -45,13 +45,15 @@ Caddy derives forwarded scheme and authority from `AUTH_URL`, removes extra inbo
 
 ## Supply chain findings
 
-Gitleaks scanned the pre-hardening Git history with no leaks detected. The production npm audit reported zero vulnerabilities. Trivy 0.76.2 produced CycloneDX SBOMs for the application and three upstream service images. The image severity gate reported findings and returned nonzero.
+Gitleaks scanned the pre-hardening Git history with no leaks detected. The production npm audit reported zero vulnerabilities. Trivy 0.76.2 produced CycloneDX SBOMs for the application and three upstream service images. The application and PostgreSQL images pass the HIGH/CRITICAL and secret gate. Caddy and Keycloak still return nonzero.
 
 | Image | High | Critical | Review |
 | --- | ---: | ---: | --- |
-| Final application | 48 | 0 | Debian base packages. The scan reported no fixed Debian versions for these findings. Removing bundled npm eliminated six high findings from its dependency tree. |
-| PostgreSQL | 44 | 1 | Alpine packages and Go metadata in upstream gosu. The critical Go TLS finding is attributed to gosu, which is used for startup UID switching. Track the upstream rebuild. |
+| Application on Node 26.13.1 Alpine | 0 | 0 | Switched to the pinned Alpine build of the same Node release and kept npm out of the final image. The previous Debian-based runtime had 48 high findings. |
+| PostgreSQL 18.6-r1 | 0 | 0 | Patched Alpine Kerberos and libxslt packages. Replaced the upstream Go-based startup helper with Alpine su-exec. The previous image had 44 high and 1 critical finding. |
 | Caddy | 2 | 0 | Go dependency findings in the pinned upstream binary. |
-| Keycloak | 6 | 0 | Upstream base and Java dependency findings, including Guava. |
+| Keycloak 26.8.2 (refreshed digest) | 6 | 0 | Upstream base and Java dependency findings, including Guava. The refreshed upstream image reported the same findings. |
+
+On Docker Desktop (Linux arm64 containers), the patched PostgreSQL image initialized fresh volumes, applied all 14 migrations, and created the optional Keycloak database. The existing disposable volumes also started successfully with the patched database and refreshed Keycloak images. The app and notification fixture use the pinned Alpine image for Node 26.13.1. With the refreshed images, all 31 Vitest and 8 Playwright tests passed again. The Alpine runtime also passed authenticated animated GIF upload, download and removal, plus an attachment archive round trip as UID 1000. Caddy remains pinned to its verified stable release. The refreshed Caddy image reported the same two findings.
 
 The runtime controls limit exposure. Treat the remaining image findings as open and rerun the scan before promotion. See [production deployment](DEPLOYMENT.md) for verification and rollback, and [backup and restore](deploy/README.md#backup-and-restore) for the commands used on disposable volumes.

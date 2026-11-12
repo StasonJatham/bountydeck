@@ -2,6 +2,8 @@
 
 Use Docker Engine with Docker Compose v2 or later. The Compose stack uses separate PostgreSQL login roles for migrations, request handling, the worker and optional Keycloak. Only Caddy publishes ports. Container references are pinned to version and manifest digest. Protect the host, Docker access and backup storage.
 
+PostgreSQL is built from the pinned upstream Alpine image in `deploy/postgres/Dockerfile`. The build installs exact Alpine security package versions and keeps PostgreSQL 18.6 and its existing volume layout. Build the `postgres` service before upgrading an existing checkout. Compose uses the locally built image and never automatically pulls that tag. To use a prebuilt image, load it or pull its immutable registry reference explicitly and set `BOUNTYDECK_POSTGRES_IMAGE`.
+
 ## Local Keycloak example
 
 Resolve `bountydeck.test` to `127.0.0.1` on the browser host, for example by adding `127.0.0.1 bountydeck.test` to its hosts file. Caddy uses the same hostname on the Compose network, so discovery, callbacks and redirects use a single issuer. The supplied HTTP configuration is for loopback development. Keep `BIND_ADDRESS=127.0.0.1` for this example.
@@ -9,8 +11,8 @@ Resolve `bountydeck.test` to `127.0.0.1` on the browser host, for example by add
 ```sh
 cp .env.example .env
 ./deploy/init-secrets.sh keycloak
-docker compose --profile keycloak pull postgres reverse-proxy keycloak
-docker compose --profile keycloak build application
+docker compose --profile keycloak pull reverse-proxy keycloak
+docker compose --profile keycloak build application postgres
 docker compose run --rm migrate
 docker compose --profile keycloak up -d --no-build --wait
 ```
@@ -175,7 +177,7 @@ After restoring, verify discovery and sign-in, open an authorized report and dow
 
 ## Upgrade and offline operation
 
-Back up the running version and retain its images. Build the replacement from the locked dependencies, stop the app and worker, run the new migration service and start the new services. Review PostgreSQL and Keycloak upgrade requirements before changing their major versions. Roll back using the matching pre-upgrade backup if the schema upgrade cannot be reversed.
+Back up the running version and retain its images. Build the replacement images with `docker compose build application postgres`, stop the app and worker, run the new migration service and start the new services. Review PostgreSQL and Keycloak upgrade requirements before changing their major versions. Roll back using the matching pre-upgrade backup if the schema upgrade cannot be reversed.
 
 Build the application and pull the pinned service images on a connected machine using the deployment architecture. Transfer them through an internal registry or `docker image save` and `docker image load`. When relying on archives, confirm that the target engine can resolve each digest-qualified Compose reference, or adjust the target references to the exact locally imported image tags and verify the image IDs. Start with `--no-build --pull never`. Run migrations with `docker compose run --pull never --rm migrate`. Provide local DNS, identity, certificates and any configured notification destinations. Avoid public ACME and use the TLS overlay for disconnected installations.
 

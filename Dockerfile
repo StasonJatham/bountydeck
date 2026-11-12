@@ -1,4 +1,4 @@
-FROM node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc AS base
+FROM node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -11,7 +11,7 @@ RUN BOUNTYDECK_STANDALONE=1 npm run build
 FROM base
 ENV NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000
 RUN rm -r /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
-    && find /usr -xdev -type f -perm /6000 -exec chmod a-s {} + \
+    && find /usr -xdev -type f \( -perm -4000 -o -perm -2000 \) -exec chmod a-s {} + \
     && install -d -o 1000 -g 1000 -m 0700 /var/lib/bountydeck/attachments
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static

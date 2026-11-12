@@ -35,9 +35,10 @@ VERIFY_URL=https://bounty.example.internal:8443 \
 npm audit --omit=dev --audit-level high
 gitleaks git --redact
 SBOM_OUTPUT=backups/bountydeck.sbom.json scripts/security-check.sh scan docker bountydeck:local
+SBOM_OUTPUT=backups/postgres.sbom.json scripts/security-check.sh scan docker bountydeck-postgres:18.6-r1
 ```
 
-The scan requires Trivy and uses an image archive. Review its findings against the upstream package advisories before promoting the image. The same scan accepts third-party image references and can run against Podman archives. Keep the SBOM with the corresponding image digest. Use [TESTING.md](TESTING.md) to run the complete application and browser suites.
+The scan requires Trivy and uses an image archive. Build or load both BountyDeck images before scanning. Review its findings against the upstream package advisories before promoting the image. The same scan accepts third-party image references and can run against Podman archives. Keep the SBOM with the corresponding image digest. Use [TESTING.md](TESTING.md) to run the complete application and browser suites.
 
 ## Upgrade and rollback
 

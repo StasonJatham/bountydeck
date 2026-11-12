@@ -26,8 +26,8 @@ git clone https://tea.karlcom.de/karl/bountydeck.git
 cd bountydeck
 cp .env.example .env
 ./deploy/init-secrets.sh keycloak
-docker compose --profile keycloak pull postgres reverse-proxy keycloak
-docker compose --profile keycloak build application
+docker compose --profile keycloak pull reverse-proxy keycloak
+docker compose --profile keycloak build application postgres
 docker compose run --rm migrate
 docker compose --profile keycloak up -d --no-build --wait
 ```

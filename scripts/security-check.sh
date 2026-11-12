@@ -22,6 +22,7 @@ case "$mode" in
           (if type == "object" then (.source // "") else . end)
           | test("docker\\.sock|podman\\.sock|^/$") | not))
         and ((.image // "") | if startswith("bountydeck:") or . == env.BOUNTYDECK_IMAGE
+          or . == "bountydeck-postgres:18.6-r1" or . == env.BOUNTYDECK_POSTGRES_IMAGE
           then true else test("@sha256:[0-9a-f]{64}$") end))
     '
     ;;
