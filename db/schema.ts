@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  customType,
   integer,
   jsonb,
   pgTable,
@@ -31,6 +32,16 @@ export const users = pgTable("users", {
     .default("researcher"),
   pseudonym: text("pseudonym"),
   leaderboardVisible: boolean("leaderboard_visible").notNull().default(false),
+});
+
+export const profileAvatars = pgTable("profile_avatars", {
+  updatedAt: date("updated_at").notNull().defaultNow(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  image: customType<{ data: Buffer }>({ dataType: () => "bytea" })(
+    "image",
+  ).notNull(),
 });
 
 export const accounts = pgTable(

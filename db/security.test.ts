@@ -331,6 +331,23 @@ test.skipIf(!connectionString)(
           .map((user_id) => ({ user_id, standing: "1" })),
       );
 
+      await actor(researcher);
+      const uploadAvatar =
+        "INSERT INTO profile_avatars (user_id, image) VALUES ($1, $2)";
+      await client.query(uploadAvatar, [researcher, Buffer.from([1])]);
+      await actor(peer);
+      expect(
+        await count("SELECT user_id FROM profile_avatars WHERE user_id=$1", [
+          researcher,
+        ]),
+      ).toBe(0);
+      expect(
+        await count("DELETE FROM profile_avatars WHERE user_id=$1", [
+          researcher,
+        ]),
+      ).toBe(0);
+      await denied(uploadAvatar, [outsider, Buffer.from([1])]);
+
       // Even an accidental membership cannot open a restricted program to guests.
       await client.query("RESET ROLE");
       await client.query(

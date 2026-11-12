@@ -1,26 +1,47 @@
+import Image from "next/image";
+import { UserRound } from "lucide-react";
 import { getI18n } from "../../../lib/i18n";
 import { Button } from "../../../components/ui/button";
 import { getResearcherProgress } from "../../../db/progress";
 import { desc, eq } from "drizzle-orm";
 import { withActor } from "../../../db";
-import { scoreEvents, users } from "../../../db/schema";
+import { profileAvatars, scoreEvents, users } from "../../../db/schema";
 import { requireActor } from "../../../lib/actor";
 import { Field, input, panel } from "../../../lib/forms";
-import { updateProfile } from "../../../lib/profile-actions";
+import {
+  removeAvatar,
+  updateProfile,
+  uploadAvatar,
+} from "../../../lib/profile-actions";
 
-export default async function Profile() {
+export default async function Profile({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const { t, date, number } = await getI18n();
   const actor = await requireActor();
-  const { profile, ledger } = await withActor(actor, async (tx) => {
-    const [profile] = await tx.select().from(users).where(eq(users.id, actor));
-    const ledger = await tx
-      .select()
-      .from(scoreEvents)
-      .where(eq(scoreEvents.userId, actor))
-      .orderBy(desc(scoreEvents.createdAt))
-      .limit(100);
-    return { profile, ledger };
-  });
+  const { profile, ledger, avatarVersion } = await withActor(
+    actor,
+    async (tx) => {
+      const [profile] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, actor));
+      const ledger = await tx
+        .select()
+        .from(scoreEvents)
+        .where(eq(scoreEvents.userId, actor))
+        .orderBy(desc(scoreEvents.createdAt))
+        .limit(100);
+      const [avatar] = await tx
+        .select({ updatedAt: profileAvatars.updatedAt })
+        .from(profileAvatars)
+        .where(eq(profileAvatars.userId, actor));
+      return { profile, ledger, avatarVersion: avatar?.updatedAt.getTime() };
+    },
+  );
   const progress = await getResearcherProgress(actor);
   return (
     <>
@@ -85,6 +106,52 @@ export default async function Profile() {
           </ul>
           {!progress.seasons.length && (
             <p className="mt-2 text-sm">{t("No seasonal activity yet.")}</p>
+          )}
+        </section>
+        <section className={`${panel} grid gap-4`}>
+          <h2 className="font-semibold">{t("Profile picture")}</h2>
+          {avatarVersion && (
+            <div className="relative grid size-24 place-items-center overflow-hidden rounded-full bg-subtle">
+              <UserRound aria-hidden className="hidden motion-reduce:block" />
+              <Image
+                unoptimized
+                src={`/api/profile/avatar?v=${avatarVersion}`}
+                width={96}
+                height={96}
+                alt={t("Profile picture")}
+                className="size-24 object-cover motion-reduce:hidden"
+              />
+            </div>
+          )}
+          {error === "avatar" && (
+            <p role="alert" className="text-sm text-danger">
+              {t(
+                "This image could not be uploaded. Check the file and its limits.",
+              )}
+            </p>
+          )}
+          <form action={uploadAvatar} className="grid gap-3">
+            <Field label={t("Choose a profile picture")}>
+              <input
+                name="avatar"
+                type="file"
+                accept="image/gif,image/png,image/jpeg"
+                aria-describedby="avatar-limits"
+                className={input}
+                required
+              />
+            </Field>
+            <p id="avatar-limits" className="text-sm text-muted">
+              {t(
+                "GIF, PNG, or JPEG. Up to 1 MiB, 512 × 512 pixels, and 60 frames.",
+              )}
+            </p>
+            <Button>{t("Upload picture")}</Button>
+          </form>
+          {avatarVersion && (
+            <form action={removeAvatar}>
+              <Button>{t("Remove picture")}</Button>
+            </form>
           )}
         </section>
         <form className={`${panel} grid gap-4`} action={updateProfile}>

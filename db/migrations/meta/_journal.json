@@ -78,6 +78,13 @@
       "when": 1794475372010,
       "tag": "0010_guest_reports",
       "breakpoints": false
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794475372011,
+      "tag": "0011_profile_avatars",
+      "breakpoints": false
     }
   ]
 }

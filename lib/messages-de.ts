@@ -10,6 +10,14 @@ export const german: Record<string, string> = {
     "Gastmeldungen werden ohne Konto gesendet. Du kannst ihren Status nicht verfolgen und erhältst keine Punkte. Verzichte in der Meldung auf Angaben, die dich identifizieren.",
   "No programs are accepting guest reports.":
     "Derzeit nimmt kein Programm Gastmeldungen an.",
+  "Profile picture": "Profilbild",
+  "Choose a profile picture": "Profilbild auswählen",
+  "Upload picture": "Bild hochladen",
+  "Remove picture": "Bild entfernen",
+  "GIF, PNG, or JPEG. Up to 1 MiB, 512 × 512 pixels, and 60 frames.":
+    "GIF, PNG oder JPEG. Bis zu 1 MiB, 512 × 512 Pixel und 60 Einzelbilder.",
+  "This image could not be uploaded. Check the file and its limits.":
+    "Das Bild konnte nicht hochgeladen werden. Prüfe die Datei und die Größenlimits.",
   Settings: "Einstellungen",
   Appearance: "Darstellung",
   Breadcrumb: "Navigationspfad",

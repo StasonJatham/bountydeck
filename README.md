@@ -55,6 +55,8 @@ For log ingestion, see the [Elastic and OpenTelemetry guide](docs/logging.md).
 - **Researchers** open **Programs**, choose an eligible program, and submit a finding. Open the report to add evidence, respond to questions, and follow its status.
 - **Triagers** open **Triage inbox** to review findings, assign reports, and update their status. Validated reports award points based on the program’s scoring rules.
 
+Open **Researcher profile** to see achievement badges and upload a GIF, PNG, or JPEG profile picture. To appear on the **Leaderboard**, opt in from your profile and choose a pseudonym.
+
 ## Connect external tools
 
 Use **Settings → Integrations** to find the REST and MCP endpoints and download Agent Skills. The [integration guide](docs/integrations.md) explains OAuth setup for user and automation identities.
