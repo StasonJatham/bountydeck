@@ -466,6 +466,9 @@ export const german: Record<string, string> = {
     "Die Keycloak-Kontenverwaltung ist derzeit nicht erreichbar.",
   "Keycloak account management is not configured.":
     "Die Keycloak-Kontenverwaltung ist nicht eingerichtet.",
+  "Disclosed reports": "Veröffentlichte Reports",
+  "No public reports have been disclosed.":
+    "Es wurden noch keine Reports öffentlich freigegeben.",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

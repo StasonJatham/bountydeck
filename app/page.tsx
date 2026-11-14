@@ -31,6 +31,9 @@ export default async function Home() {
               {t("Report anonymously")}
             </Link>
           )}
+          <Link className="mt-4 w-fit text-sm underline" href="/disclosures">
+            {t("Disclosed reports")}
+          </Link>
         </section>
       </main>
     </>

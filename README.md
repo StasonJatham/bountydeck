@@ -79,8 +79,8 @@ from the same page. Each request uses the owner's current BountyDeck permissions
 Anonymous clients can read published summaries at `GET /api/v1/public/programs`
 and `GET /api/v1/public/reports`, or use the MCP tool
 `bountydeck_list_public_disclosures`. Use the returned `nextCursor` for
-pagination. Platform administrators publish and withdraw reviewed summaries
-under **Administration → Public disclosures**.
+pagination. The landing page links to the public report directory. Program managers
+approve and withdraw disclosures directly on the report.
 
 Program managers can list a published program publicly and set its report
 disclosure policy independently. Eligible closed reports support disclosure
