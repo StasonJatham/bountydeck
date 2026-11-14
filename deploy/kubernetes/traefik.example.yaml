@@ -1,0 +1,26 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: private-edge
+  namespace: bountydeck
+spec:
+  ipAllowList:
+    sourceRange: [192.0.2.10/32]
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bountydeck
+  namespace: bountydeck
+spec:
+  entryPoints: [websecure]
+  routes:
+    - match: Host(`bug.example.internal`) && (PathPrefix(`/identity/realms/bountydeck/`) || PathPrefix(`/identity/resources/`))
+      priority: 200
+      middlewares: [{name: private-edge}]
+      services: [{name: keycloak, port: 8080}]
+    - match: Host(`bug.example.internal`) && !PathPrefix(`/identity`)
+      priority: 100
+      middlewares: [{name: private-edge}]
+      services: [{name: application, port: 3000}]
+  tls: {}

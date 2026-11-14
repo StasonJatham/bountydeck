@@ -1,4 +1,4 @@
-FROM postgres:18.6-alpine@sha256:9ba53c7d41ea093baf5c1ba635ba5434c4f979880527d49bb7d9237d3193085b
+FROM docker.io/library/postgres:18.6-alpine@sha256:9ba53c7d41ea093baf5c1ba635ba5434c4f979880527d49bb7d9237d3193085b
 
 # Preserve the upstream initialization and postgres UID. Its only gosu
 # invocation is the startup UID switch, which Alpine's native helper supports.
