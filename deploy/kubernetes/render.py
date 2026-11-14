@@ -12,7 +12,15 @@ parser.add_argument("--postgres-image", required=True)
 parser.add_argument("--storage-class", default="longhorn-encrypted")
 parser.add_argument("--managed-users", action="store_true",
                     help="Enable Keycloak-backed user administration with a provisioned service account")
+parser.add_argument("--webhook-destinations", type=Path,
+                    help="JSON file mapping approved HTTPS origins to permitted IP addresses")
 args = parser.parse_args()
+webhook_env = {}
+if args.webhook_destinations:
+    destinations = json.loads(args.webhook_destinations.read_text())
+    if not isinstance(destinations, dict):
+        parser.error("Webhook destinations must be a JSON object")
+    webhook_env["WEBHOOK_DESTINATIONS"] = json.dumps(destinations, separators=(",", ":"))
 origin = urlsplit(args.origin)
 if origin.scheme != "https" or not origin.hostname or origin.netloc != origin.hostname or origin.path or origin.query or origin.fragment:
     parser.error("Provide a canonical HTTPS origin without a path or port")
@@ -116,13 +124,13 @@ managed_user_env = {
 } if args.managed_users else {}
 workload("application", args.app_image, None,
     {"AUTH_URL": args.origin, "APP_ORIGIN": args.origin, "OIDC_ISSUER": issuer,
-     "OIDC_CLIENT_ID": "bountydeck", "ATTACHMENTS_DIR": "/var/lib/bountydeck/attachments", **managed_user_env},
+     "OIDC_CLIENT_ID": "bountydeck", "ATTACHMENTS_DIR": "/var/lib/bountydeck/attachments", **managed_user_env, **webhook_env},
     ["db_app_password", "auth_secret", "oidc_client_secret", "internal_ca"]
     + (["keycloak_user_admin_secret"] if args.managed_users else []),
     storage=("attachments", "/var/lib/bountydeck/attachments"), port=3000,
     probe={"httpGet": {"path": "/api/health", "port": 3000}}, memory="1Gi")
 workload("worker", args.app_image, {"args": ["node", "--experimental-strip-types", "notifications/worker.ts"]},
-    {"BOUNTYDECK_SERVICE": "worker", "APP_ORIGIN": args.origin}, ["db_worker_password"])
+    {"BOUNTYDECK_SERVICE": "worker", "APP_ORIGIN": args.origin, **webhook_env}, ["db_worker_password"])
 workload("keycloak", "quay.io/keycloak/keycloak:26.8.2@sha256:c68e286cacd87b942ac1939a0a1481461109d6acd3a57dc496969a319a76bbf0",
     {"command": ["/bin/bash", "/opt/keycloak/bountydeck-entrypoint.sh"]},
     {"KC_DB": "postgres", "KC_DB_URL": "jdbc:postgresql://postgres:5432/keycloak",

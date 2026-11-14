@@ -62,3 +62,12 @@ that group. Add the client credential to the application Secret under
 `keycloak_user_admin_secret` and render with `--managed-users`. This option
 adds direct cluster-local access from the application to Keycloak. Keep the
 Keycloak administration API blocked at the public ingress.
+
+### Outgoing webhooks
+
+Pass `--webhook-destinations /path/to/destinations.json` to the renderer to
+configure approved origins for both the application and notification worker.
+For example, `{"https://flows.example.org":["192.0.2.10"]}` illustrates the
+format. Replace the example origin and address with your Node-RED receiver.
+Users enter the HTTPS URL including its flow path under **Notifications**.
+Keep receiver credentials and signing secrets out of the origin map.
