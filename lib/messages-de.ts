@@ -366,6 +366,10 @@ export const german: Record<string, string> = {
   "Color theme": "Farbschema",
   "System theme": "Systemeinstellung",
   "Light mode": "Hell",
+  "User management": "Benutzerverwaltung",
+  "Application sessions revoked.": "BountyDeck-Sitzungen wurden beendet.",
+  "Revoke application sessions": "BountyDeck-Sitzungen beenden",
+  Administrator: "Administrator",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

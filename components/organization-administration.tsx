@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AchievementAdministration } from "./achievement-review";
 import { getI18n } from "../lib/i18n";
 import { Button } from "./ui/button";
@@ -81,6 +82,14 @@ export async function OrganizationAdministration({
       <h1 className="text-3xl font-semibold tracking-tight">
         {t(platformOnly ? "Administration" : "Organization management")}
       </h1>
+      {platform && (
+        <Link
+          href="/admin/users"
+          className="mt-3 inline-block text-accent underline"
+        >
+          {t("User management")}
+        </Link>
+      )}
       {error && (
         <p role="alert" className="mt-4 text-danger">
           {t("Check the details and choose a unique slug.")}
