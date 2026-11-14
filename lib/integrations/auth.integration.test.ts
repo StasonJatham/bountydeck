@@ -29,7 +29,10 @@ it("authenticates real Keycloak service and PKCE access tokens and rejects the I
   vi.stubEnv("INTEGRATION_AUDIENCE", audience);
   vi.stubEnv("INTEGRATION_SCOPE", "bountydeck.api");
   vi.stubEnv("INTEGRATION_ALLOW_HTTP", "true");
-  vi.stubEnv("INTEGRATION_INTROSPECTION_CLIENT_ID", "bountydeck");
+  vi.stubEnv(
+    "INTEGRATION_INTROSPECTION_CLIENT_ID",
+    process.env.INTEGRATION_FIXTURE_CLIENT_ID ?? "bountydeck",
+  );
   vi.stubEnv(
     "INTEGRATION_INTROSPECTION_CLIENT_SECRET",
     secret("oidc_client_secret"),
@@ -50,8 +53,11 @@ it("authenticates real Keycloak service and PKCE access tokens and rejects the I
     if (url.origin !== origin) throw new Error("Unexpected fixture origin");
     const headers = new Headers(init?.headers);
     headers.set("Host", url.host);
+    const body = init?.body?.toString();
     if (init?.body instanceof URLSearchParams)
       headers.set("Content-Type", "application/x-www-form-urlencoded");
+    if (body !== undefined)
+      headers.set("Content-Length", String(Buffer.byteLength(body)));
     return new Promise<Response>((resolve, reject) => {
       const call = requestHttp(
         new URL(url.pathname + url.search, loopback),
@@ -82,7 +88,7 @@ it("authenticates real Keycloak service and PKCE access tokens and rejects the I
         },
       );
       call.on("error", reject);
-      call.end(init?.body?.toString());
+      call.end(body);
     });
   });
   const { authenticateIntegration } = await import("./auth");
