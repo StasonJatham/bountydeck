@@ -73,6 +73,8 @@ def workload(name, image, command, env, secrets, *, uid=1000, storage=None,
             "capabilities": caps},
         "volumeMounts": mounts, "resources": {"requests": {"cpu": "100m", "memory": "128Mi"},
             "limits": {"cpu": "2", "memory": memory}}}
+    if name == "application":
+        container["lifecycle"] = {"preStop": {"exec": {"command": ["node", "-e", "setTimeout(() => {}, 10000)"]}}}
     if command:
         container.update(command)
     if port:
