@@ -38,3 +38,14 @@ Retain the encrypted database and attachment volumes. Back up both PostgreSQL da
 The [Traefik example](traefik.example.yaml) restricts cluster ingress to the private edge proxy. Replace the example hostname and source address. Configure the edge's OIDC backchannel for discovery, token, JWKS and userinfo. If the application's outbound source differs from client addresses, permit only those endpoint paths from the application's verified egress address. Keep the browser route private and verify the app can reach discovery with normal TLS verification.
 
 For a cluster that preloads images, import the built images on the intended node and use the loaded references in the rendered manifests. Pin the workload templates to that node until all eligible nodes have the required images. Include the Keycloak image in the preload and adjust its Deployment image if the import uses a local alias.
+
+### Application releases
+
+Application and worker Deployments use rolling updates with `maxUnavailable: 0` and
+`maxSurge: 1`. Keep enough capacity for the additional pod and run compatible
+database migrations before changing the application image. When using a
+ReadWriteOnce attachment claim, both application replicas must be able to
+mount it on the same node during the rollout. For multi-node scheduling use
+shared storage that supports concurrent mounts across nodes. PostgreSQL and
+Keycloak have separate upgrade procedures. The rollout policy is for application
+releases and does not provide high availability for either dependency.

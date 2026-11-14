@@ -88,7 +88,10 @@ def workload(name, image, command, env, secrets, *, uid=1000, storage=None,
     if job:
         spec.update(backoffLimit=2, activeDeadlineSeconds=300)
     else:
-        spec.update(replicas=1, selector={"matchLabels": selector(name)}, strategy={"type": "Recreate"})
+        strategy = {"type": "Recreate"}
+        if name in ("application", "worker"):
+            strategy = {"type": "RollingUpdate", "rollingUpdate": {"maxUnavailable": 0, "maxSurge": 1}}
+        spec.update(replicas=1, selector={"matchLabels": selector(name)}, strategy=strategy)
     add("Job" if job else "Deployment", name, {"spec": spec}, "batch/v1" if job else "apps/v1")
 
 
