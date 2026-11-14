@@ -1,3 +1,4 @@
+import Markdown from "react-markdown";
 import { ReportBadge } from "../../../../components/report-badge";
 import { getI18n } from "../../../../lib/i18n";
 import { Button } from "../../../../components/ui/button";
@@ -143,7 +144,17 @@ export default async function Program({
                     {asset.inScope ? t("In scope") : t("Out of scope")}
                   </ReportBadge>
                 </div>
-                <p>{asset.description}</p>
+                {asset.target && (
+                  <p className="wrap-anywhere text-sm">
+                    <span className="uppercase text-muted">
+                      {asset.targetType}
+                    </span>{" "}
+                    <code>{asset.target}</code>
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap wrap-anywhere">
+                  {asset.description}
+                </p>
               </li>
             ))}
           </ul>
@@ -153,9 +164,18 @@ export default async function Program({
         </section>
         <section className={panel}>
           <h2 className="font-semibold">{t("Testing rules")}</h2>
-          <p className="mt-2 whitespace-pre-wrap">{program.rules}</p>
+          <div className="markdown mt-2 max-h-96 overflow-auto wrap-anywhere">
+            <Markdown skipHtml disallowedElements={["img"]}>
+              {program.rules || t("No testing rules have been published.")}
+            </Markdown>
+          </div>
           <h2 className="mt-5 font-semibold">{t("Disclosure policy")}</h2>
-          <p className="mt-2 whitespace-pre-wrap">{program.disclosurePolicy}</p>
+          <div className="markdown mt-2 max-h-96 overflow-auto wrap-anywhere">
+            <Markdown skipHtml disallowedElements={["img"]}>
+              {program.disclosurePolicy ||
+                t("No disclosure policy has been published.")}
+            </Markdown>
+          </div>
         </section>
       </div>
       {!eligible && (

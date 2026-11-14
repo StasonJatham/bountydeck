@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { withActor } from "../../db";
@@ -43,7 +44,12 @@ export const organizationRoleInput = z.object({
 });
 export const programCreateInput = details.extend({ orgId: uuid });
 export const programInput = programData;
-export const scopeInput = z.object({ name, description });
+export const scopeInput = z.object({
+  name,
+  description,
+  targetType: z.enum(["host", "ip", "cidr", "url", "other"]).optional(),
+  target: z.string().trim().max(512).optional(),
+});
 export const programRoleInput = z.object({
   userId: uuid,
   role: z.enum(["manager", "triager", "researcher"]),
@@ -172,12 +178,39 @@ export async function performUpdateProgram(
   });
 }
 
+function validateScopeTarget(data: z.infer<typeof scopeInput>) {
+  const { targetType, target = "" } = data;
+  const [address, prefix, extra] = target.split("/");
+  const ip = isIP(address);
+  const url = URL.parse(target);
+  const valid =
+    !targetType ||
+    targetType === "other" ||
+    (targetType === "ip" && isIP(target) !== 0) ||
+    (targetType === "cidr" &&
+      ip !== 0 &&
+      extra === undefined &&
+      /^\d{1,3}$/.test(prefix ?? "") &&
+      Number(prefix) <= (ip === 4 ? 32 : 128)) ||
+    (targetType === "url" &&
+      url &&
+      ["https:", "http:"].includes(url.protocol) &&
+      !url.username &&
+      !url.password) ||
+    (targetType === "host" &&
+      /^(?:\*\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(
+        target,
+      ));
+  if (!valid) throw new IntegrationError(422, "invalid_input");
+}
+
 export async function performAddScope(
   actor: string,
   id: string,
   data: z.infer<typeof scopeInput>,
   inScope: boolean,
 ) {
+  validateScopeTarget(data);
   return withActor(actor, async (tx) => {
     if (
       !(
@@ -304,6 +337,7 @@ export async function performUpdateScope(
   data: z.infer<typeof scopeInput>,
   inScope: boolean,
 ) {
+  validateScopeTarget(data);
   return withActor(actor, async (tx) => {
     const [scope] = await tx
       .update(programScopes)

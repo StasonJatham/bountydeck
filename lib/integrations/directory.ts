@@ -151,7 +151,9 @@ export function getProgram(actor: string, id: string) {
       .limit(200);
     return {
       ...metadata,
-      ...(canViewRules ? { rules, disclosurePolicy } : {}),
+      ...(canViewRules
+        ? { rules, disclosurePolicy, policyFormat: "markdown" as const }
+        : {}),
       ...permissions,
       scope,
       rewards: programRewards,

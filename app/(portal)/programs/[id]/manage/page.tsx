@@ -1,3 +1,4 @@
+import { MarkdownEditor } from "../../../../../components/markdown-editor";
 import { getI18n } from "../../../../../lib/i18n";
 import { Button } from "../../../../../components/ui/button";
 import Link from "next/link";
@@ -107,15 +108,14 @@ export default async function Manage({
               ["disclosurePolicy", "Disclosure policy"],
             ] as const
           ).map(([key, label]) => (
-            <Field label={t(label)} key={key}>
-              <textarea
-                name={key}
-                defaultValue={program[key]}
-                className={input}
-                maxLength={10000}
-                rows={4}
-              />
-            </Field>
+            <MarkdownEditor
+              key={key}
+              name={key}
+              initial={program[key]}
+              label={t(label)}
+              preview={t("Markdown preview")}
+              list={t("Add list item")}
+            />
           ))}
           {(
             [
@@ -235,6 +235,11 @@ export default async function Manage({
                         maxLength={100}
                       />
                     </Field>
+                    <ScopeTarget
+                      t={t}
+                      type={item.targetType}
+                      target={item.target}
+                    />
                     <Field label={t("Description")}>
                       <textarea
                         className={input}
@@ -263,6 +268,8 @@ export default async function Manage({
           >
             <h2 className="font-semibold">{t("Add to scope")}</h2>
             <Text name="name" label={t("Asset name")} max={100} />
+            <ScopeTarget t={t} />
+
             <Text
               name="description"
               label={t("Description")}
@@ -299,6 +306,47 @@ export default async function Manage({
           </form>
         </div>
       </div>
+    </>
+  );
+}
+
+function ScopeTarget({
+  t,
+  type = "other",
+  target = "",
+}: {
+  t: (message: string) => string;
+  type?: string;
+  target?: string;
+}) {
+  return (
+    <>
+      <Field label={t("Target type")}>
+        <select name="targetType" className={input} defaultValue={type}>
+          {(["host", "ip", "cidr", "url", "other"] as const).map((kind) => (
+            <option key={kind} value={kind}>
+              {t(
+                {
+                  host: "Hostname",
+                  ip: "IP address",
+                  cidr: "CIDR network",
+                  url: "URL",
+                  other: "Other",
+                }[kind],
+              )}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label={t("Target value")}>
+        <input
+          name="target"
+          className={input}
+          defaultValue={target}
+          maxLength={512}
+          placeholder="*.example.org / 192.0.2.0/24"
+        />
+      </Field>
     </>
   );
 }

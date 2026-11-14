@@ -38,7 +38,11 @@ async function webOperation<T>(call: () => Promise<T>, conflict?: string) {
     return await call();
   } catch (error) {
     if (error instanceof IntegrationError && error.status === 404) notFound();
-    if (error instanceof IntegrationError && error.status === 409 && conflict)
+    if (
+      error instanceof IntegrationError &&
+      [409, 422].includes(error.status) &&
+      conflict
+    )
       redirect(conflict);
     throw error;
   }
@@ -110,7 +114,7 @@ export async function addScope(id: string, data: FormData) {
   if (!parsed.success) redirect(`/programs/${id}/manage?error=invalid`);
   await webOperation(
     () => performAddScope(actor, id, parsed.data, data.get("inScope") === "on"),
-    undefined,
+    `/programs/${id}/manage?error=invalid`,
   );
   redirect(`/programs/${id}/manage`);
 }
@@ -181,7 +185,7 @@ export async function updateScope(
         parsed.data,
         data.get("inScope") === "on",
       ),
-    undefined,
+    `/programs/${programId}/manage?error=invalid`,
   );
   redirect(`/programs/${programId}/manage`);
 }

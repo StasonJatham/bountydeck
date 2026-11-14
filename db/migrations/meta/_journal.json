@@ -134,6 +134,13 @@
       "when": 1794475372018,
       "tag": "0018_public_disclosures",
       "breakpoints": false
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794475372019,
+      "tag": "0019_scope_targets",
+      "breakpoints": false
     }
   ]
 }

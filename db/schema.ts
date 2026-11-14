@@ -151,6 +151,12 @@ export const programScopes = pgTable("program_scopes", {
     .references(() => programs.id),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
+  targetType: text("target_type", {
+    enum: ["host", "ip", "cidr", "url", "other"],
+  })
+    .notNull()
+    .default("other"),
+  target: text("target").notNull().default(""),
   inScope: boolean("in_scope").notNull().default(true),
 });
 

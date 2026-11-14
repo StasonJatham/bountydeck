@@ -390,6 +390,17 @@ export const german: Record<string, string> = {
   "Public summary": "Öffentliche Zusammenfassung",
   "Publish summary": "Zusammenfassung veröffentlichen",
   Unpublish: "Veröffentlichung zurückziehen",
+  "Markdown preview": "Markdown-Vorschau",
+  "Add list item": "Listeneintrag hinzufügen",
+  "Target type": "Zieltyp",
+  "Target value": "Zielwert",
+  Hostname: "Hostname",
+  "IP address": "IP-Adresse",
+  "CIDR network": "CIDR-Netz",
+  "No testing rules have been published.":
+    "Es wurden noch keine Testregeln veröffentlicht.",
+  "No disclosure policy has been published.":
+    "Es wurde noch keine Offenlegungsrichtlinie veröffentlicht.",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":
