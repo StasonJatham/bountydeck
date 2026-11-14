@@ -406,6 +406,21 @@ export const german: Record<string, string> = {
     "Eine UTF-8-TXT-Datei bis 512 KiB ersetzt den Text oben.",
   "Choose a non-empty UTF-8 TXT file up to 512 KiB.":
     "Wähle eine nicht leere UTF-8-TXT-Datei bis 512 KiB.",
+  "Manage webhooks": "Webhooks verwalten",
+  "Reports needing information": "Reports mit Rückfragen",
+  "Webhook preferences saved.": "Webhook-Einstellungen gespeichert.",
+  "Use an approved HTTPS destination and a signing secret of at least 32 characters.":
+    "Verwende ein zugelassenes HTTPS-Ziel und ein Signaturgeheimnis mit mindestens 32 Zeichen.",
+  "Personal outgoing webhook": "Persönlicher ausgehender Webhook",
+  "Enable webhook": "Webhook aktivieren",
+  "Destination URL": "Ziel-URL",
+  "My report submitted": "Eigener Report eingereicht",
+  "My report updated": "Eigener Report aktualisiert",
+  "Comment on my report": "Kommentar zu meinem Report",
+  "New program available": "Neues Programm verfügbar",
+  "Program updated": "Programm aktualisiert",
+  "Recent webhook deliveries": "Letzte Webhook-Zustellungen",
+  "No webhook deliveries yet.": "Noch keine Webhook-Zustellungen.",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

@@ -98,15 +98,18 @@ export function PortalShell({
       : (icon !== "reports" || !triage) &&
         (pathname === href || pathname.startsWith(`${href}/`)),
   );
-  const detail = pathname.startsWith("/programs/")
-    ? pathname.endsWith("/notifications")
+  const detail =
+    pathname === "/notifications"
       ? labels.notifications
-      : pathname.endsWith("/manage")
-        ? labels.programSettings
-        : labels.programDetails
-    : pathname.startsWith("/reports/")
-      ? labels.reportDetails
-      : undefined;
+      : pathname.startsWith("/programs/")
+        ? pathname.endsWith("/notifications")
+          ? labels.notifications
+          : pathname.endsWith("/manage")
+            ? labels.programSettings
+            : labels.programDetails
+        : pathname.startsWith("/reports/")
+          ? labels.reportDetails
+          : undefined;
   const initials = user
     .trim()
     .split(/\s+/)
@@ -294,7 +297,7 @@ export function PortalShell({
           </nav>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
             <Link
-              href="/reports?status=needs_information"
+              href="/notifications"
               aria-label={labels.notifications}
               title={labels.notifications}
               className="relative grid size-9 place-items-center rounded-md text-secondary hover:bg-subtle"

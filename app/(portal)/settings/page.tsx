@@ -11,6 +11,15 @@ export default async function Settings() {
       <h1 className="text-3xl font-semibold tracking-tight">{t("Settings")}</h1>
       <div className="mt-6 grid max-w-2xl gap-4">
         <section className={panel}>
+          <h2 className="font-semibold">{t("Notifications")}</h2>
+          <Link
+            href="/notifications"
+            className="mt-3 inline-block text-sm font-medium text-accent underline"
+          >
+            {t("Manage webhooks")}
+          </Link>
+        </section>
+        <section className={panel}>
           <h2 className="font-semibold">{t("Preferences")}</h2>
           <div className="mt-3 flex flex-wrap items-center gap-4">
             <LocaleControl />

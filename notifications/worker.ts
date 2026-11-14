@@ -58,7 +58,11 @@ async function processOne() {
     } = await client.query<Job>(`
       SELECT o.id, o.program_id, o.report_id, o.public_report_id, o.event_type, o.severity,
              o.created_at, o.attempts, o.retry_count,
-             c.enabled AND o.routing_revision = c.routing_revision AS enabled,
+             c.enabled AND o.routing_revision = c.routing_revision AND
+               CASE WHEN o.personal THEN
+                 o.event_type = ANY(c.subscribed_events)
+                 AND personal_notification_visible(c.owner_id, o.program_id, o.report_id)
+               ELSE true END AS enabled,
              c.destination, c.signing_secret, c.kind
       FROM notification_outbox o
       JOIN notification_channels c ON c.id = o.channel_id

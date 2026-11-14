@@ -21,3 +21,9 @@ Receivers should verify the signature, check timestamp freshness, and deduplicat
 Run `npx vitest run notifications` for the notification policy tests. Set `TEST_NOTIFICATION_ADMIN_URL` and `TEST_NOTIFICATION_WORKER_URL` to an isolated, migrated PostgreSQL database to include the concurrent worker test. Use an administrator connection and the dedicated worker role, respectively.
 
 Run `psql -X -v ON_ERROR_STOP=1 -f notifications/database.test.sql` as an administrator on a migrated test database to check subscriptions, internal note exclusion, severity filtering, and scoped operations. The SQL fixture rolls back.
+
+Signed-in users can open the bell or **Settings → Manage webhooks** to configure
+one personal webhook. It uses the same approved HTTPS destinations, signatures,
+and retry worker as program webhooks. Personal report events cover the user's
+own reports and exclude internal comments. Program events cover published
+programs the user can access. The page lists recent delivery outcomes.

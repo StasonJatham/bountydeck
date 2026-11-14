@@ -141,6 +141,13 @@
       "when": 1794475372019,
       "tag": "0019_scope_targets",
       "breakpoints": false
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794475372020,
+      "tag": "0020_personal_webhooks",
+      "breakpoints": false
     }
   ]
 }
