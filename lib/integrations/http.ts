@@ -42,8 +42,6 @@ export function integrationOrigin() {
 
 export function protectTransport(request: Request) {
   const base = integrationOrigin();
-  if (process.env.INTEGRATION_AUDIENCE !== `${base.origin}/mcp`)
-    throw new IntegrationError(503, "integration_unavailable");
   const origin = request.headers.get("origin");
   if (
     request.headers.get("host") !== base.host ||
