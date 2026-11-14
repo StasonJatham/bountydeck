@@ -87,4 +87,6 @@ disclosure policy independently. Eligible closed reports support disclosure
 requests by the reporter or program manager. The manager reviews and approves
 a redacted publication, or denies the request. Public endpoints serve the
 approved publication. Program-only publications require a program participant
-account. Existing manually entered summaries require a new review and approval.
+account. Participants can open the disclosure on the program page, fetch it at
+`GET /api/v1/disclosures/{id}`, or call `bountydeck_get_disclosure` with its ID.
+Existing manually entered summaries require a new review and approval.
