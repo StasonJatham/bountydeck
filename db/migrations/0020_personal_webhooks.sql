@@ -19,17 +19,18 @@ CREATE POLICY personal_channel ON notification_channels TO bossob_app
 GRANT INSERT (owner_id) ON notification_channels TO bossob_app;
 
 CREATE FUNCTION personal_notification_visible(owner uuid, program uuid, report uuid) RETURNS boolean
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public SET app.actor_id = '' AS $$
-BEGIN
-  PERFORM set_config('app.actor_id', owner::text, true);
-  IF report IS NOT NULL THEN
-    RETURN EXISTS (SELECT FROM reports WHERE id = report AND reporter_id = owner);
-  END IF;
-  RETURN EXISTS (
-    SELECT FROM programs WHERE id = program AND status = 'published'
-      AND app_can_view_program(id)
-  );
-END;
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public AS $$
+  SELECT CASE WHEN report IS NOT NULL THEN
+    EXISTS (SELECT FROM reports WHERE id = report AND reporter_id = owner)
+  ELSE EXISTS (
+    SELECT FROM programs p WHERE p.id = program AND p.status = 'published' AND (
+      p.eligibility = 'all'
+      OR EXISTS (SELECT FROM program_memberships m WHERE m.program_id = p.id AND m.user_id = owner)
+      OR EXISTS (SELECT FROM org_memberships m WHERE m.org_id = p.org_id AND m.user_id = owner
+        AND (p.eligibility = 'organization' OR m.role IN ('admin', 'oversight')))
+      OR EXISTS (SELECT FROM users u WHERE u.id = owner AND u.platform_role = 'admin')
+    )
+  ) END
 $$;
 REVOKE ALL ON FUNCTION personal_notification_visible(uuid,uuid,uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION personal_notification_visible(uuid,uuid,uuid) TO bossob_worker;
