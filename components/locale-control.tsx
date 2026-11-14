@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { getI18n, localeCookie } from "../lib/i18n";
+import { getI18n } from "../lib/i18n";
+import { savePreference } from "../lib/preferences";
 import { LocaleSelect } from "./locale-select";
 
 export async function LocaleControl() {
@@ -13,14 +13,7 @@ export async function LocaleControl() {
         "use server";
         const selected = data.get("locale");
         if (selected !== "en" && selected !== "de") return;
-        const jar = await cookies();
-        jar.set(localeCookie, selected, {
-          path: "/",
-          sameSite: "lax",
-          httpOnly: true,
-          maxAge: 31536000,
-          secure: process.env.AUTH_URL?.startsWith("https:"),
-        });
+        await savePreference({ locale: selected });
       }}
     />
   );

@@ -1,10 +1,19 @@
-import { cookies } from "next/headers";
 import { getI18n } from "../lib/i18n";
-import { readTheme } from "../lib/theme";
+import { getPreferences, savePreference } from "../lib/preferences";
 import { ThemeSelect } from "./theme-select";
 
 export async function ThemeControl() {
-  const theme = readTheme(await cookies());
+  const { theme } = await getPreferences();
   const { t } = await getI18n();
-  return <ThemeSelect initialTheme={theme} label={t("Dark mode")} />;
+  return (
+    <ThemeSelect
+      theme={theme}
+      label={t("Dark mode")}
+      update={async (next) => {
+        "use server";
+        if (next === "light" || next === "dark")
+          await savePreference({ theme: next });
+      }}
+    />
+  );
 }

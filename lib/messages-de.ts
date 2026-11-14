@@ -366,6 +366,7 @@ export const german: Record<string, string> = {
   "Color theme": "Farbschema",
   "System theme": "Systemeinstellung",
   "Light mode": "Hell",
+  Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":
     "Interne Meldestelle für Sicherheitslücken",

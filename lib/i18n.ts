@@ -1,9 +1,8 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { getPreferences, type Locale } from "./preferences";
 import { german } from "./messages-de";
 
-export const localeCookie = "bountydeck-locale";
-export type Locale = "en" | "de";
+export type { Locale } from "./preferences";
 
 export function translator(locale: Locale) {
   return (message: string, values: Record<string, string | number> = {}) =>
@@ -16,11 +15,7 @@ export function translator(locale: Locale) {
 }
 
 export const getI18n = cache(async () => {
-  const jar = await cookies();
-  const locale: Locale =
-    (jar.get(localeCookie)?.value ?? jar.get("bossob-locale")?.value) === "de"
-      ? "de"
-      : "en";
+  const { locale } = await getPreferences();
   const language = locale === "de" ? "de-DE" : "en-GB";
   const date = new Intl.DateTimeFormat(language, {
     dateStyle: "medium",

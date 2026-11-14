@@ -1,8 +1,7 @@
 import { SiteFooter } from "../components/site-footer";
 import localFont from "next/font/local";
 import { getI18n } from "../lib/i18n";
-import { cookies } from "next/headers";
-import { readTheme } from "../lib/theme";
+import { getPreferences, preferenceSession } from "../lib/preferences";
 import type { ReactNode } from "react";
 import "./style.css";
 
@@ -28,8 +27,8 @@ export async function generateMetadata() {
 }
 
 export default async function Layout({ children }: { children: ReactNode }) {
-  const theme = readTheme(await cookies());
-  const { locale } = await getI18n();
+  const { theme, locale } = await getPreferences();
+  const signedIn = Boolean((await preferenceSession())?.actorId);
   return (
     <html
       lang={locale}
@@ -38,7 +37,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
     >
       <body className="flex min-h-dvh flex-col">
         {children}
-        <SiteFooter />
+        <SiteFooter signedIn={signedIn} />
       </body>
     </html>
   );

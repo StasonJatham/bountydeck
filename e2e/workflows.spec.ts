@@ -513,12 +513,22 @@ test("color theme follows the system and persists across sign-in and reload", as
   await page.locator("#kc-login").click();
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(theme).toBeChecked();
+  await expect(theme).toHaveCount(0);
+  await page.getByRole("button", { name: "Account menu" }).click();
+  await page
+    .locator(".account-menu")
+    .getByRole("link", { name: "Settings" })
+    .click();
+  await expect(page).toHaveURL(/\/settings$/);
+  const accountTheme = page
+    .getByRole("main")
+    .getByRole("switch", { name: "Dark mode" });
+  await expect(accountTheme).toBeChecked();
   await expect(page.getByRole("banner")).toHaveCSS(
     "background-color",
     "rgb(30, 30, 34)",
   );
-  await theme.click();
+  await accountTheme.click();
   await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
 });
 
@@ -581,7 +591,11 @@ test("German and English persist, and only platform admins can open Administrati
   expect((await manager.goto("/admin"))?.status()).toBe(404);
   const admin = await login(browser, baseURL, "local-platform-admin");
   await admin
-    .getByRole("contentinfo")
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Settings" })
+    .click();
+  await admin
+    .getByRole("main")
     .getByRole("combobox", { name: "Language" })
     .selectOption("de");
   await admin.getByRole("link", { name: "Verwaltung", exact: true }).click();

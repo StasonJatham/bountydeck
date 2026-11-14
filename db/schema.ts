@@ -374,3 +374,11 @@ export const integrationAudit = pgTable("integration_audit", {
   outcome: integer("outcome").notNull(),
   createdAt: date("created_at").notNull().defaultNow(),
 });
+
+export const userPreferences = pgTable("user_preferences", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  locale: text("locale", { enum: ["en", "de"] }),
+  theme: text("theme", { enum: ["light", "dark"] }),
+});

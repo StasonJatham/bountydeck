@@ -99,6 +99,13 @@
       "when": 1794475372013,
       "tag": "0013_manual_achievements",
       "breakpoints": false
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794475372014,
+      "tag": "0014_user_preferences",
+      "breakpoints": false
     }
   ]
 }

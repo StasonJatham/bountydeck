@@ -124,6 +124,21 @@ export function PortalShell({
     return () => desktop.removeEventListener("change", closeDrawer);
   }, []);
 
+  useEffect(() => {
+    function closeOnOutsidePointer(event: PointerEvent) {
+      const details = menu.current;
+      if (
+        details?.open &&
+        event.target instanceof Node &&
+        !details.contains(event.target)
+      )
+        details.open = false;
+    }
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, []);
+
   function navigation(compact: boolean, mobile = false) {
     return (
       <nav
@@ -303,7 +318,10 @@ export function PortalShell({
                 }
               }}
               onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget))
+                if (
+                  event.relatedTarget &&
+                  !event.currentTarget.contains(event.relatedTarget)
+                )
                   event.currentTarget.open = false;
               }}
             >
@@ -335,7 +353,7 @@ export function PortalShell({
                 <Link
                   href="/profile"
                   className="rounded-md px-2 py-1.5 hover:bg-subtle"
-                  onClick={() => {
+                  onNavigate={() => {
                     if (menu.current) menu.current.open = false;
                   }}
                 >
@@ -344,7 +362,7 @@ export function PortalShell({
                 <Link
                   href="/settings"
                   className="rounded-md px-2 py-1.5 hover:bg-subtle"
-                  onClick={() => {
+                  onNavigate={() => {
                     if (menu.current) menu.current.open = false;
                   }}
                 >
