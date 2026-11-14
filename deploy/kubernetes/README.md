@@ -49,3 +49,16 @@ mount it on the same node during the rollout. For multi-node scheduling use
 shared storage that supports concurrent mounts across nodes. PostgreSQL and
 Keycloak have separate upgrade procedures. The rollout policy is for application
 releases and does not provide high availability for either dependency.
+
+### Keycloak user administration
+
+To enable the user management controls, create a dedicated confidential client
+named `bountydeck-user-admin` in the BountyDeck realm. Enable service accounts
+and disable interactive and password-grant flows on this client. Grant its
+service account the realm-local `realm-management/manage-users` role. Create a
+`bountydeck-managed` group for ordinary accounts managed by BountyDeck. Keep
+realm administrators, service accounts and privileged group memberships outside
+that group. Add the client credential to the application Secret under
+`keycloak_user_admin_secret` and render with `--managed-users`. This option
+adds direct cluster-local access from the application to Keycloak. Keep the
+Keycloak administration API blocked at the public ingress.

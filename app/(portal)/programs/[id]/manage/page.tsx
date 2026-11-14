@@ -1,3 +1,4 @@
+import { AdminDeleteRecord } from "../../../../../components/admin-delete-record";
 import { MarkdownEditor } from "../../../../../components/markdown-editor";
 import { getI18n } from "../../../../../lib/i18n";
 import { Button } from "../../../../../components/ui/button";
@@ -74,11 +75,12 @@ export default async function Manage({
       >
         {t("Notification settings")}
       </Link>
-      {(await searchParams).error && (
-        <p role="alert" className="mt-4 text-danger">
-          {t("Check the details and try again.")}
-        </p>
-      )}
+      {(await searchParams).error &&
+        (await searchParams).error !== "delete-blocked" && (
+          <p role="alert" className="mt-4 text-danger">
+            {t("Check the details and try again.")}
+          </p>
+        )}
       <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <form
           className={`${panel} grid gap-3`}
@@ -306,6 +308,13 @@ export default async function Manage({
           </form>
         </div>
       </div>
+      {["archived", "draft"].includes(program.status) && (
+        <AdminDeleteRecord
+          kind="program"
+          id={id}
+          blocked={(await searchParams).error === "delete-blocked"}
+        />
+      )}
     </>
   );
 }

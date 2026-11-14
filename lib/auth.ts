@@ -1,10 +1,11 @@
+import { eq } from "drizzle-orm";
 import { logEvent } from "./telemetry/logger";
 import { readTheme } from "./theme";
 import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { readFileSync } from "node:fs";
 import { db } from "../db";
-import { authUsers, accounts, sessions } from "../db/schema";
+import { authUsers, accounts, sessions, users } from "../db/schema";
 
 function secret(name: string) {
   const path = process.env[`${name}_FILE`];
@@ -29,6 +30,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => {
   return {
     adapter: {
       ...adapter,
+      async getSessionAndUser(token) {
+        const result = await adapter.getSessionAndUser!(token);
+        if (!result) return null;
+        const [user] = await db
+          .select({ disabled: users.loginDisabled })
+          .from(users)
+          .where(eq(users.id, result.user.id));
+        return user?.disabled ? null : result;
+      },
       getUserByAccount: (account) =>
         adapter.getUserByAccount!({ ...account, provider }),
       linkAccount: ({ userId, type, providerAccountId }) =>
@@ -92,6 +102,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth((request) => {
     ],
     session: { strategy: "database", maxAge: 8 * 3600 },
     callbacks: {
+      async signIn({ account }) {
+        if (!account) return false;
+        const existing = await adapter.getUserByAccount!({
+          provider,
+          providerAccountId: account.providerAccountId,
+        });
+        if (!existing) return true;
+        const [user] = await db
+          .select({ disabled: users.loginDisabled })
+          .from(users)
+          .where(eq(users.id, existing.id));
+        return !user?.disabled;
+      },
       session({ session, user }) {
         return { ...session, actorId: user.id };
       },

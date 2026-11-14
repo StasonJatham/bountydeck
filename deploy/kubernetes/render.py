@@ -10,6 +10,8 @@ parser.add_argument("--origin", required=True)
 parser.add_argument("--app-image", required=True)
 parser.add_argument("--postgres-image", required=True)
 parser.add_argument("--storage-class", default="longhorn-encrypted")
+parser.add_argument("--managed-users", action="store_true",
+                    help="Enable Keycloak-backed user administration with a provisioned service account")
 args = parser.parse_args()
 origin = urlsplit(args.origin)
 if origin.scheme != "https" or not origin.hostname or origin.netloc != origin.hostname or origin.path or origin.query or origin.fragment:
@@ -105,10 +107,18 @@ workload("postgres", args.postgres_image, {"args": ["postgres", "-c", "max_conne
     port=5432, probe={"exec": {"command": ["pg_isready", "-h", "127.0.0.1", "-U", "postgres"]}}, memory="1Gi")
 workload("migrate", args.app_image, {"args": ["node", "db/migrate.ts"]},
     {"BOUNTYDECK_SERVICE": "migrate"}, ["db_migrate_password"], job=True)
+managed_user_env = {
+    "KEYCLOAK_ADMIN_ISSUER": "http://keycloak:8080/identity/realms/bountydeck",
+    "KEYCLOAK_ADMIN_CLIENT_ID": "bountydeck-user-admin",
+    "KEYCLOAK_ADMIN_ALLOW_HTTP": "true",
+    "KEYCLOAK_ADMIN_CLIENT_SECRET_FILE": "/run/secrets/keycloak_user_admin_secret",
+    "KEYCLOAK_ADMIN_USER_GROUP": "/bountydeck-managed",
+} if args.managed_users else {}
 workload("application", args.app_image, None,
     {"AUTH_URL": args.origin, "APP_ORIGIN": args.origin, "OIDC_ISSUER": issuer,
-     "OIDC_CLIENT_ID": "bountydeck", "ATTACHMENTS_DIR": "/var/lib/bountydeck/attachments"},
-    ["db_app_password", "auth_secret", "oidc_client_secret", "internal_ca"],
+     "OIDC_CLIENT_ID": "bountydeck", "ATTACHMENTS_DIR": "/var/lib/bountydeck/attachments", **managed_user_env},
+    ["db_app_password", "auth_secret", "oidc_client_secret", "internal_ca"]
+    + (["keycloak_user_admin_secret"] if args.managed_users else []),
     storage=("attachments", "/var/lib/bountydeck/attachments"), port=3000,
     probe={"httpGet": {"path": "/api/health", "port": 3000}}, memory="1Gi")
 workload("worker", args.app_image, {"args": ["node", "--experimental-strip-types", "notifications/worker.ts"]},
@@ -140,4 +150,11 @@ add("NetworkPolicy", "ingress-controller", {"spec": {"podSelector": {"matchExpre
         "namespaceSelector": {"matchLabels": {"kubernetes.io/metadata.name": "kube-system"}},
         "podSelector": {"matchLabels": {"app.kubernetes.io/name": "traefik"}}}],
         "ports": [{"port": 3000}, {"port": 8080}]}]}}, "networking.k8s.io/v1")
+if args.managed_users:
+    add("NetworkPolicy", "keycloak-admin-client", {"spec": {
+        "podSelector": {"matchLabels": selector("keycloak")},
+        "policyTypes": ["Ingress"],
+        "ingress": [{"from": [{"podSelector": {"matchLabels": selector("application")}}],
+                     "ports": [{"port": 8080}]}],
+    }}, "networking.k8s.io/v1")
 print(json.dumps({"apiVersion": "v1", "kind": "List", "items": items}, indent=2))

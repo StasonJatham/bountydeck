@@ -27,6 +27,7 @@ export const authUsers = pgTable("users", userIdentity());
 
 export const users = pgTable("users", {
   ...userIdentity(),
+  loginDisabled: boolean("login_disabled").notNull().default(false),
   platformRole: text("platform_role", { enum: ["admin", "researcher"] })
     .notNull()
     .default("researcher"),

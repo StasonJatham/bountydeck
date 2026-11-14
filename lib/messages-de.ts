@@ -429,6 +429,43 @@ export const german: Record<string, string> = {
   "Company logo": "Firmenlogo",
   "Use default logo": "Standardlogo verwenden",
   "Accent color": "Akzentfarbe",
+  "Permanently delete report": "Report endgültig löschen",
+  "Permanently delete program": "Programm endgültig löschen",
+  "Deletion is blocked because this record has retained dependencies.":
+    "Dieser Eintrag kann aufgrund zu erhaltender verknüpfter Daten nicht gelöscht werden.",
+  "I understand this action cannot be undone.":
+    "Ich verstehe, dass diese Aktion nicht rückgängig gemacht werden kann.",
+  "Delete permanently": "Endgültig löschen",
+  "Previous page": "Vorherige Seite",
+  "BountyDeck accounts": "BountyDeck-Konten",
+  "Keycloak could not complete the action. Check the account before retrying.":
+    "Keycloak konnte die Aktion nicht abschließen. Prüfe das Konto, bevor du es erneut versuchst.",
+  "Check the account fields and try again.":
+    "Prüfe die Kontofelder und versuche es erneut.",
+  "Account updated.": "Konto aktualisiert.",
+  "Temporary password": "Temporäres Passwort",
+  "Last name": "Nachname",
+  "First name": "Vorname",
+  "No managed accounts on this page.":
+    "Keine verwalteten Konten auf dieser Seite.",
+  "Delete account": "Konto löschen",
+  "Delete the Keycloak account permanently and retain report history.":
+    "Keycloak-Konto endgültig löschen und Reportverlauf behalten.",
+  "Require password change at next sign-in":
+    "Passwortwechsel beim nächsten Login erzwingen",
+  "End Keycloak and application sessions":
+    "Keycloak- und Anwendungssitzungen beenden",
+  "Enable account": "Konto entsperren",
+  "Disable account": "Konto sperren",
+  "Reset password": "Passwort zurücksetzen",
+  "Managed Keycloak accounts": "Verwaltete Keycloak-Konten",
+  "Create account": "Konto anlegen",
+  Username: "Benutzername",
+  "Create Keycloak account": "Keycloak-Konto anlegen",
+  "Keycloak account management is currently unavailable.":
+    "Die Keycloak-Kontenverwaltung ist derzeit nicht erreichbar.",
+  "Keycloak account management is not configured.":
+    "Die Keycloak-Kontenverwaltung ist nicht eingerichtet.",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

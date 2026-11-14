@@ -1,3 +1,4 @@
+import { AdminDeleteRecord } from "../../../../components/admin-delete-record";
 import { AchievementReview } from "../../../../components/achievement-review";
 import { getManualAchievements } from "../../../../lib/manual-achievements";
 import { guestReporterId } from "../../../../lib/guest-reports";
@@ -157,7 +158,7 @@ export default async function Report({
           </span>
         )}
       </p>
-      {error && (
+      {error && error !== "delete-blocked" && (
         <p role="alert" className="mt-4 text-danger">
           {t("The change could not be saved. Check the form and try again.")}
         </p>
@@ -397,6 +398,11 @@ export default async function Report({
           </section>
         </div>
       </div>
+      <AdminDeleteRecord
+        kind="report"
+        id={id}
+        blocked={error === "delete-blocked"}
+      />
     </>
   );
 }

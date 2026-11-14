@@ -1,3 +1,4 @@
+import { ManagedIdentities } from "./managed-identities";
 import { Button } from "../../../../components/ui/button";
 import {
   listAdminUsers,
@@ -9,7 +10,7 @@ import { getI18n } from "../../../../lib/i18n";
 export default async function AdminUsers({
   searchParams,
 }: {
-  searchParams: Promise<{ revoked?: string }>;
+  searchParams: Promise<{ revoked?: string; identity?: string; page?: string }>;
 }) {
   const [users, actor, { t }, query] = await Promise.all([
     listAdminUsers(),
@@ -23,6 +24,26 @@ export default async function AdminUsers({
       {query.revoked === "1" && (
         <p role="status">{t("Application sessions revoked.")}</p>
       )}
+      {query.identity === "saved" && (
+        <p role="status">{t("Account updated.")}</p>
+      )}
+      {query.identity === "invalid" && (
+        <p role="alert">{t("Check the account fields and try again.")}</p>
+      )}
+      {query.identity === "failed" && (
+        <p role="alert">
+          {t(
+            "Keycloak could not complete the action. Check the account before retrying.",
+          )}
+        </p>
+      )}
+      <ManagedIdentities
+        page={Math.min(
+          1000,
+          Number(/^\d+$/.test(query.page ?? "") ? query.page : 0),
+        )}
+      />
+      <h2 className="mt-6 font-semibold">{t("BountyDeck accounts")}</h2>
       <ul className="mt-6 divide-y divide-line rounded-lg border border-line bg-surface">
         {users.map((user) => (
           <li

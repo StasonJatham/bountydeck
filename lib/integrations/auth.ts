@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, withActor } from "../../db";
-import { accounts } from "../../db/schema";
+import { accounts, users } from "../../db/schema";
 
 export type IntegrationPrincipal = {
   actorId: string;
@@ -264,8 +264,10 @@ export async function authenticateIntegration(
   const [account] = await db
     .select({ actorId: accounts.userId })
     .from(accounts)
+    .innerJoin(users, eq(users.id, accounts.userId))
     .where(
       and(
+        eq(users.loginDisabled, false),
         eq(accounts.provider, provider),
         eq(accounts.providerAccountId, identity.subject),
       ),
