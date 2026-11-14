@@ -66,6 +66,7 @@ type Labels = {
 
 export function PortalShell({
   children,
+  brand,
   signOut,
   items,
   organizations,
@@ -74,6 +75,7 @@ export function PortalShell({
   attention,
 }: {
   children: ReactNode;
+  brand: { name: string; logo: string };
   signOut: ReactNode;
   items: NavigationItem[];
   organizations: { id: string; name: string }[];
@@ -217,7 +219,7 @@ export function PortalShell({
             aria-label="BountyDeck"
             className="hover:no-underline"
           >
-            <Brand compact={collapsed} />
+            <Brand compact={collapsed} brand={brand} />
           </Link>
           <button
             type="button"
@@ -245,7 +247,7 @@ export function PortalShell({
         }}
       >
         <div className="flex h-16 items-center justify-between px-4">
-          <Brand />
+          <Brand brand={brand} />
           <button
             type="button"
             aria-label={labels.close}

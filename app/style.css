@@ -34,11 +34,17 @@
   --secondary-foreground: light-dark(#3f3f46, #d4d4dc);
   --border: light-dark(#e5e7eb, #36363d);
   --input: light-dark(#898992, #73737f);
-  --primary: #5265e8;
-  --primary-hover: #4155d5;
-  --primary-foreground: #ffffff;
-  --accent: light-dark(#4355cb, #aab4ff);
-  --ring: light-dark(#5265e8, #aab4ff);
+  --primary: var(--brand-accent, #5265e8);
+  --primary-hover: var(--brand-accent, #4155d5);
+  --primary-foreground: var(--brand-foreground, #ffffff);
+  --accent: light-dark(
+    var(--brand-link-light, #4355cb),
+    var(--brand-link-dark, #aab4ff)
+  );
+  --ring: light-dark(
+    var(--brand-link-light, #5265e8),
+    var(--brand-link-dark, #aab4ff)
+  );
   --destructive: light-dark(#a12635, #fda4af);
   --warning: light-dark(#895009, #fcd28b);
   --success: light-dark(#16734c, #86e3b0);

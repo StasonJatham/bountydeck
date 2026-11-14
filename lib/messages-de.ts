@@ -421,6 +421,14 @@ export const german: Record<string, string> = {
   "Program updated": "Programm aktualisiert",
   "Recent webhook deliveries": "Letzte Webhook-Zustellungen",
   "No webhook deliveries yet.": "Noch keine Webhook-Zustellungen.",
+  Branding: "Erscheinungsbild",
+  "Branding saved.": "Erscheinungsbild gespeichert.",
+  "Check the name, hex color and logo file.":
+    "Prüfe den Namen, die Hex-Farbe und die Logo-Datei.",
+  "Company name": "Firmenname",
+  "Company logo": "Firmenlogo",
+  "Use default logo": "Standardlogo verwenden",
+  "Accent color": "Akzentfarbe",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

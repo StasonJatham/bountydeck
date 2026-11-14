@@ -148,6 +148,13 @@
       "when": 1794475372020,
       "tag": "0020_personal_webhooks",
       "breakpoints": false
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794475372021,
+      "tag": "0021_branding",
+      "breakpoints": false
     }
   ]
 }

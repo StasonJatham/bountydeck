@@ -1,3 +1,4 @@
+import { getBranding } from "../lib/branding";
 import { SiteHeader } from "../components/site-header";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -8,7 +9,7 @@ export default async function Home() {
   const { t } = await getI18n();
   return (
     <>
-      <SiteHeader />
+      <SiteHeader brand={await getBranding()} />
       <main className="mx-auto flex w-full flex-1 max-w-6xl flex-col px-6 sm:px-10">
         <section className="flex flex-1 flex-col justify-center py-10 sm:py-20">
           <h1 className="max-w-3xl text-5xl leading-[1.02] font-semibold tracking-[-0.065em] text-balance sm:text-7xl">

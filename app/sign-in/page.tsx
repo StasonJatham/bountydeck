@@ -1,3 +1,4 @@
+import { getBranding } from "../../lib/branding";
 import { SiteHeader } from "../../components/site-header";
 import { redirect } from "next/navigation";
 import { Button } from "../../components/ui/button";
@@ -13,7 +14,7 @@ export default async function SignIn({
   const { t } = await getI18n();
   return (
     <>
-      <SiteHeader />
+      <SiteHeader brand={await getBranding()} />
       <main className="mx-auto grid w-full max-w-lg flex-1 place-items-center px-5">
         <section className="mx-auto grid w-full max-w-sm justify-items-center gap-4 py-4 text-center">
           <h1 className="text-2xl font-semibold">{t("Sign in")}</h1>

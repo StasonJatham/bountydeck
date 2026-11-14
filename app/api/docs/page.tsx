@@ -1,3 +1,4 @@
+import { getBranding } from "../../../lib/branding";
 import { SiteHeader } from "../../../components/site-header";
 import Link from "next/link";
 import { requireActor } from "../../../lib/actor";
@@ -9,7 +10,7 @@ export default async function ApiDocs() {
   const spec = openApi();
   return (
     <>
-      <SiteHeader />
+      <SiteHeader brand={await getBranding()} />
       <main className="mx-auto max-w-5xl space-y-5 px-5 py-8">
         <Link href="/integrations" className="text-accent">
           ← Integrations

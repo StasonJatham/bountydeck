@@ -1,3 +1,4 @@
+import { getBranding } from "../../lib/branding";
 import { and, count, eq, sql } from "drizzle-orm";
 import type { ReactNode } from "react";
 import {
@@ -74,6 +75,7 @@ export default async function Portal({ children }: { children: ReactNode }) {
 
   return (
     <PortalShell
+      brand={await getBranding()}
       items={items}
       organizations={organizations}
       user={user?.name ?? ""}
