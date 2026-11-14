@@ -1,11 +1,9 @@
 import { and, count, eq, sql } from "drizzle-orm";
 import type { ReactNode } from "react";
-import { LocaleControl } from "../../components/locale-control";
 import {
   PortalShell,
   type NavigationItem,
 } from "../../components/portal-shell";
-import { ThemeControl } from "../../components/theme-control";
 import { withActor } from "../../db";
 import { orgUnits, programs, reports, users } from "../../db/schema";
 import { requireActor } from "../../lib/actor";
@@ -80,23 +78,17 @@ export default async function Portal({ children }: { children: ReactNode }) {
       organizations={organizations}
       user={user?.name ?? ""}
       attention={attention}
-      theme={<ThemeControl />}
       signOut={
-        <>
-          <div className="px-1.5 py-1">
-            <LocaleControl />
-          </div>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-subtle">
-              {t("Sign out")}
-            </button>
-          </form>
-        </>
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/" });
+          }}
+        >
+          <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-subtle">
+            {t("Sign out")}
+          </button>
+        </form>
       }
       labels={{
         navigation: t("Main navigation"),

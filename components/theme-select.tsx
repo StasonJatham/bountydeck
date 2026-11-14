@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { parseTheme, themeCookie, themes, type Theme } from "../lib/theme";
+import { themeCookie, type Theme } from "../lib/theme";
 
 import { Switch } from "./ui/switch";
 
@@ -14,12 +14,10 @@ function subscribe(callback: () => void) {
 
 export function ThemeSelect({
   initialTheme,
-  labels,
-  compact = false,
+  label,
 }: {
   initialTheme: Theme;
-  compact?: boolean;
-  labels: Record<Theme | "label", string>;
+  label: string;
 }) {
   const [theme, setTheme] = useState(initialTheme);
 
@@ -36,31 +34,14 @@ export function ThemeSelect({
     setTheme(next);
   }
 
-  if (compact) {
-    return (
-      <div className="flex items-center gap-1 text-sm text-muted">
-        <span aria-hidden>{labels.dark}</span>
-        <Switch
-          aria-label={labels.dark}
-          aria-checked={dark}
-          onClick={() => updateTheme(dark ? "light" : "dark")}
-        />
-      </div>
-    );
-  }
-
   return (
-    <select
-      aria-label={labels.label}
-      className="rounded-md border border-control bg-surface px-2 py-1.5 text-sm"
-      value={theme}
-      onChange={(event) => updateTheme(parseTheme(event.target.value))}
-    >
-      {themes.map((value) => (
-        <option key={value} value={value}>
-          {labels[value]}
-        </option>
-      ))}
-    </select>
+    <div className="flex items-center gap-1 text-sm text-muted">
+      <span aria-hidden>{label}</span>
+      <Switch
+        aria-label={label}
+        aria-checked={dark}
+        onClick={() => updateTheme(dark ? "light" : "dark")}
+      />
+    </div>
   );
 }

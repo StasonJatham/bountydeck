@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { SiteHeader } from "./site-header";
 import { Brand } from "./brand";
 
 const icons = {
@@ -65,7 +66,6 @@ type Labels = {
 
 export function PortalShell({
   children,
-  theme,
   signOut,
   items,
   organizations,
@@ -74,7 +74,6 @@ export function PortalShell({
   attention,
 }: {
   children: ReactNode;
-  theme: ReactNode;
   signOut: ReactNode;
   items: NavigationItem[];
   organizations: { id: string; name: string }[];
@@ -183,7 +182,7 @@ export function PortalShell({
 
   return (
     <div
-      className={`min-h-dvh lg:grid ${collapsed ? "lg:grid-cols-[68px_minmax(0,1fr)]" : "lg:grid-cols-[248px_minmax(0,1fr)]"}`}
+      className={`flex-1 lg:grid ${collapsed ? "lg:grid-cols-[68px_minmax(0,1fr)]" : "lg:grid-cols-[248px_minmax(0,1fr)]"}`}
     >
       <a
         href="#main-content"
@@ -242,7 +241,7 @@ export function PortalShell({
       </dialog>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-10 flex min-h-16 items-center gap-2 border-b border-line bg-surface px-3 sm:gap-4 sm:px-6">
+        <SiteHeader className="sticky top-0 z-10 flex items-center gap-2 px-3 sm:gap-4 sm:px-6">
           <button
             type="button"
             aria-label={labels.open}
@@ -293,7 +292,6 @@ export function PortalShell({
                 />
               )}
             </Link>
-            {theme}
             <details
               className="account-menu relative"
               ref={menu}
@@ -356,7 +354,7 @@ export function PortalShell({
               </div>
             </details>
           </div>
-        </header>
+        </SiteHeader>
         <main
           id="main-content"
           tabIndex={-1}

@@ -1,3 +1,4 @@
+import { SiteFooter } from "../components/site-footer";
 import localFont from "next/font/local";
 import { getI18n } from "../lib/i18n";
 import { cookies } from "next/headers";
@@ -35,7 +36,10 @@ export default async function Layout({ children }: { children: ReactNode }) {
       data-theme={theme}
       className={`${geist.variable} ${mono.variable}`}
     >
-      <body>{children}</body>
+      <body className="flex min-h-dvh flex-col">
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

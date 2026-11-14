@@ -482,25 +482,27 @@ test("color theme follows the system and persists across sign-in and reload", as
       async (element) => (await fetch((element as HTMLLinkElement).href)).ok,
     ),
   ).toBe(true);
-  const theme = page.getByRole("combobox", { name: "Color theme" });
-  await expect(theme).toHaveValue("system");
+  const theme = page
+    .getByRole("contentinfo")
+    .getByRole("switch", { name: "Dark mode" });
+  await expect(theme).toBeChecked();
   await expect(root).toHaveCSS("background-color", "rgb(20, 20, 22)");
   await page.screenshot({
     path: info.outputPath("landing-dark.png"),
     fullPage: true,
   });
 
-  await theme.selectOption("light");
+  await theme.click();
   await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
   await page.reload();
-  await expect(theme).toHaveValue("light");
+  await expect(theme).not.toBeChecked();
   await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
   await page.screenshot({
     path: info.outputPath("landing-light.png"),
     fullPage: true,
   });
 
-  await theme.selectOption("dark");
+  await theme.click();
   await page.getByRole("link", { name: "Sign in" }).click();
   await expect(root).toHaveAttribute("data-theme", "dark");
   await page
@@ -511,13 +513,12 @@ test("color theme follows the system and persists across sign-in and reload", as
   await page.locator("#kc-login").click();
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(theme).toHaveValue("dark");
+  await expect(theme).toBeChecked();
   await expect(page.getByRole("banner")).toHaveCSS(
     "background-color",
     "rgb(30, 30, 34)",
   );
-  await theme.selectOption("system");
-  await page.emulateMedia({ colorScheme: "light" });
+  await theme.click();
   await expect(root).toHaveCSS("background-color", "rgb(250, 250, 249)");
 });
 
@@ -579,8 +580,10 @@ test("German and English persist, and only platform admins can open Administrati
   ).toBeVisible();
   expect((await manager.goto("/admin"))?.status()).toBe(404);
   const admin = await login(browser, baseURL, "local-platform-admin");
-  await admin.getByRole("button", { name: "Account menu" }).click();
-  await admin.getByRole("combobox", { name: "Language" }).selectOption("de");
+  await admin
+    .getByRole("contentinfo")
+    .getByRole("combobox", { name: "Language" })
+    .selectOption("de");
   await admin.getByRole("link", { name: "Verwaltung", exact: true }).click();
   await expect(
     admin.getByRole("heading", { name: "Verwaltung", exact: true }),
