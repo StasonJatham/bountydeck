@@ -28,8 +28,13 @@ export default async function Programs({
   const eligible = filters.eligible === "1";
   const q = typeof query === "string" ? query.trim().slice(0, 100) : "";
   const selectedOrganization = z.uuid().safeParse(filters.organization).data;
-  const rows = await withActor(actor, (tx) =>
-    tx
+  const { rows, admin } = await withActor(actor, async (tx) => ({
+    admin: (
+      await tx.execute<{ admin: boolean }>(
+        sql`select app_platform_admin() as admin`,
+      )
+    ).rows[0].admin,
+    rows: await tx
       .select({
         program: programs,
         organization: orgUnits.name,
@@ -47,15 +52,31 @@ export default async function Programs({
             ? eq(programs.orgId, selectedOrganization)
             : undefined,
           status && eq(programs.status, status),
-          eligible ? sql`app_can_submit(${programs.id})` : undefined,
+          eligible
+            ? sql`app_can_submit(${programs.id}) AND EXISTS (
+            SELECT FROM ${programScopes} WHERE ${programScopes.programId} = ${programs.id} AND ${programScopes.inScope}
+          )`
+            : undefined,
         ),
       )
       .orderBy(asc(programs.name), asc(programs.id))
       .limit(100),
-  );
+  }));
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">{t("Programs")}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {t(eligible ? "Choose a program" : "Programs")}
+        </h1>
+        {admin && (
+          <Link
+            className="rounded-md bg-action px-4 py-2 text-sm font-medium text-on-action"
+            href="/admin#create-program"
+          >
+            {t("Create program")}
+          </Link>
+        )}
+      </div>
       <form className="mt-6 flex flex-wrap gap-2">
         {selectedOrganization && (
           <input
@@ -99,12 +120,15 @@ export default async function Programs({
           {t("Search")}
         </button>
       </form>
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div
+        id="program-list"
+        className="mt-6 grid scroll-mt-20 gap-4 md:grid-cols-2"
+      >
         {rows.map(({ program, organization, eligible, scopeCount }) => (
           <Link
             className="group flex min-w-0 flex-col rounded-xl border border-line bg-surface p-5 transition-colors hover:border-accent/40 hover:no-underline"
             key={program.id}
-            href={`/programs/${program.id}`}
+            href={`/programs/${program.id}${filters.eligible === "1" ? "#submit-report" : ""}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 text-xs text-muted">

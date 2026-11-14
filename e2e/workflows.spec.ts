@@ -324,9 +324,12 @@ test("organization and program administration enforce role boundaries", async ({
     admin.getByText("organization.role_grant").first(),
   ).toBeVisible();
   await manager.goto("/organizations");
-  const createProgram = manager
+  await expect(
+    manager.getByRole("button", { name: "Create program" }),
+  ).toHaveCount(0);
+  const createProgram = admin
     .locator("form")
-    .filter({ has: manager.getByRole("heading", { name: "Create program" }) });
+    .filter({ has: admin.getByRole("heading", { name: "Create program" }) });
   await createProgram.getByLabel("Organization").selectOption(orgId!);
   await createProgram
     .getByLabel("Name", { exact: true })
@@ -334,9 +337,10 @@ test("organization and program administration enforce role boundaries", async ({
   await createProgram.getByLabel("Slug").fill(`qa-program-${suffix}`);
   await createProgram.getByRole("button", { name: "Create program" }).click();
   await expect(
-    manager.getByRole("heading", { name: `Manage QA Program ${suffix}` }),
+    admin.getByRole("heading", { name: `Manage QA Program ${suffix}` }),
   ).toBeVisible();
-  const managePath = new URL(manager.url()).pathname;
+  const managePath = new URL(admin.url()).pathname;
+  await manager.goto(managePath);
   await manager
     .locator("form")
     .filter({ has: manager.getByRole("heading", { name: "Add to scope" }) })

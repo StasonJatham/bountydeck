@@ -98,7 +98,11 @@ export async function OrganizationAdministration({
       <div className="mt-6 grid items-start gap-4 md:grid-cols-2">
         {platform && <AchievementAdministration result={achievement} />}
         {platform && (
-          <form className={`${panel} grid gap-3`} action={createOrganization}>
+          <form
+            id={managed.length === 0 ? "create-program" : undefined}
+            className={`${panel} grid gap-3`}
+            action={createOrganization}
+          >
             <h2 className="font-semibold">{t("Create organization")}</h2>
             <Text name="name" label={t("Name")} max={100} />
             <Text name="slug" label={t("Slug")} max={80} />
@@ -111,9 +115,10 @@ export async function OrganizationAdministration({
             <Button>{t("Create organization")}</Button>
           </form>
         )}
-        {managed.length > 0 && (
+        {platform && managed.length > 0 && (
           <form
             className={`${panel} grid gap-3`}
+            id="create-program"
             action={createProgram.bind(null, returnTo)}
           >
             <h2 className="font-semibold">{t("Create program")}</h2>

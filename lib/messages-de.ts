@@ -370,6 +370,11 @@ export const german: Record<string, string> = {
   "Application sessions revoked.": "BountyDeck-Sitzungen wurden beendet.",
   "Revoke application sessions": "BountyDeck-Sitzungen beenden",
   Administrator: "Administrator",
+  "New report": "Neuer Report",
+  "Submit your first report": "Reiche deinen ersten Report ein",
+  "Choose a program to report a vulnerability.":
+    "Wähle ein Programm aus, um eine Schwachstelle zu melden.",
+  "Choose a program": "Programm auswählen",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

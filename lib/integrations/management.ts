@@ -126,7 +126,7 @@ export async function performCreateProgram(
     if (
       !(
         await tx.execute<{ ok: boolean }>(
-          sql`select app_org_admin(${data.orgId}::uuid) as ok`,
+          sql`select app_platform_admin() as ok`,
         )
       ).rows[0].ok
     )

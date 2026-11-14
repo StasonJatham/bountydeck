@@ -54,9 +54,19 @@ export default async function Reports({
   });
   return (
     <>
-      <h1 className="text-3xl font-semibold tracking-tight">
-        {inbox ? t("Triage inbox") : t("My reports")}
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {inbox ? t("Triage inbox") : t("My reports")}
+        </h1>
+        {!inbox && (
+          <Link
+            className="rounded-md bg-action px-4 py-2 text-sm font-medium text-on-action"
+            href="/programs?eligible=1#program-list"
+          >
+            {t("New report")}
+          </Link>
+        )}
+      </div>
       {canTriage && (
         <nav
           aria-label={t("Report views")}
@@ -169,6 +179,19 @@ export default async function Reports({
               ))}
             </tbody>
           </table>
+        ) : !inbox && !status && !severity && !query.before ? (
+          <div className="grid justify-items-center gap-3 p-10 text-center">
+            <h2 className="font-semibold">{t("Submit your first report")}</h2>
+            <p className="text-sm text-muted">
+              {t("Choose a program to report a vulnerability.")}
+            </p>
+            <Link
+              className="font-medium text-accent underline"
+              href="/programs?eligible=1#program-list"
+            >
+              {t("Choose a program")}
+            </Link>
+          </div>
         ) : (
           <p className="p-5 text-sm text-muted">
             {t("No reports match these filters.")}
