@@ -120,6 +120,20 @@
       "when": 1794475372016,
       "tag": "0016_platform_program_create",
       "breakpoints": false
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794475372017,
+      "tag": "0017_personal_api_keys",
+      "breakpoints": false
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794475372018,
+      "tag": "0018_public_disclosures",
+      "breakpoints": false
     }
   ]
 }

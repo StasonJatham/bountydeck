@@ -1,3 +1,4 @@
+import { publicDisclosures } from "../../../../lib/integrations/public-disclosures";
 import { loggedRoute } from "../../../../lib/telemetry/http";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -20,9 +21,27 @@ async function handle(
   const requestId = randomUUID();
   try {
     protectTransport(request);
+    const { segments } = await context.params;
+    if (
+      request.method === "GET" &&
+      segments.length === 2 &&
+      segments[0] === "public" &&
+      (segments[1] === "reports" || segments[1] === "programs")
+    ) {
+      const after = new URL(request.url).searchParams.get("cursor");
+      if (after !== null && !z.uuid().safeParse(after).success)
+        throw new IntegrationError(422, "invalid_input");
+      return jsonResult(
+        await publicDisclosures(
+          segments[1] === "reports" ? "report" : "program",
+          after ?? undefined,
+        ),
+        200,
+        requestId,
+      );
+    }
     const principal = await authenticateIntegration(request);
     await consumeRate(principal);
-    const { segments } = await context.params;
     for (const operation of operations) {
       if (operation.method !== request.method) continue;
       const template = operation.path.slice(1).split("/");

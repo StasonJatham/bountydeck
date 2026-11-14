@@ -90,6 +90,14 @@ export async function OrganizationAdministration({
           {t("User management")}
         </Link>
       )}
+      {platform && (
+        <Link
+          href="/admin/disclosures"
+          className="mt-3 ml-4 inline-block text-accent underline"
+        >
+          {t("Public disclosures")}
+        </Link>
+      )}
       {error && (
         <p role="alert" className="mt-4 text-danger">
           {t("Check the details and choose a unique slug.")}

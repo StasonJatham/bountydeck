@@ -375,6 +375,21 @@ export const german: Record<string, string> = {
   "Choose a program to report a vulnerability.":
     "Wähle ein Programm aus, um eine Schwachstelle zu melden.",
   "Choose a program": "Programm auswählen",
+  "Personal API keys": "Persönliche API-Schlüssel",
+  "Use the key as a Bearer token for REST and MCP. It uses your current permissions and expires after 90 days.":
+    "Verwende den Schlüssel als Bearer-Token für REST und MCP. Er nutzt deine aktuellen Berechtigungen und läuft nach 90 Tagen ab.",
+  "Key name": "Name des Schlüssels",
+  "Create key": "Schlüssel erstellen",
+  "Copy this key now. It is shown only once.":
+    "Kopiere diesen Schlüssel jetzt. Er wird nur einmal angezeigt.",
+  "Revoke key": "Schlüssel widerrufen",
+  "Public disclosures": "Öffentliche Veröffentlichungen",
+  "Publish a reviewed summary. Private report text, identities and evidence stay private.":
+    "Veröffentliche eine geprüfte Zusammenfassung. Private Meldungstexte, Identitäten und Nachweise bleiben vertraulich.",
+  "Program or report ID": "Programm- oder Report-ID",
+  "Public summary": "Öffentliche Zusammenfassung",
+  "Publish summary": "Zusammenfassung veröffentlichen",
+  Unpublish: "Veröffentlichung zurückziehen",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

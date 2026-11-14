@@ -68,3 +68,16 @@ BountyDeck is available under the [GNU AGPL v3.0 only](LICENSE).
 Set `BOUNTYDECK_GUEST_REPORTS=true` in `.env`, run the database migrations, and recreate the application container. The landing page then links to **Report anonymously**. This lists published programs open to all that have at least one in-scope asset. Program names, rules, and in-scope asset names are visible without signing in.
 
 Guests can submit a report without giving an email address. Reviewers receive it in the normal triage inbox. Guests receive an on-screen confirmation and have no report history, replies, or points. All guests share a submission limit of ten reports per hour. Reverse proxies and hosting services may still record connection metadata.
+
+### API keys and public data
+
+After signing in, open **Settings → Connect a client → Personal API keys**.
+Create a key and copy it when displayed. Send it as `Authorization: Bearer <key>`
+to REST or Streamable HTTP MCP. Keys expire after 90 days and can be revoked
+from the same page. Each request uses the owner's current BountyDeck permissions.
+
+Anonymous clients can read published summaries at `GET /api/v1/public/programs`
+and `GET /api/v1/public/reports`, or use the MCP tool
+`bountydeck_list_public_disclosures`. Use the returned `nextCursor` for
+pagination. Platform administrators publish and withdraw reviewed summaries
+under **Administration → Public disclosures**.

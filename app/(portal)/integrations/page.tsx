@@ -1,3 +1,6 @@
+import { KeyForm } from "./key-form";
+import { revokeKey } from "./key-actions";
+import { Button } from "../../../components/ui/button";
 import Link from "next/link";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { withActor } from "../../../db";
@@ -10,39 +13,49 @@ import { integrationSkills } from "../../../lib/integration-skills";
 export default async function Integrations() {
   const actor = await requireActor();
   const { t, dateTime } = await getI18n();
-  const { user, permissions, activity } = await withActor(actor, async (tx) => {
-    const [user] = await tx
-      .select({ name: users.name, platformRole: users.platformRole })
-      .from(users)
-      .where(eq(users.id, actor));
-    const permissions = await tx
-      .select({
-        id: programs.id,
-        name: programs.name,
-        view: sql<boolean>`app_can_view_program(${programs.id})`,
-        submit: sql<boolean>`app_can_submit(${programs.id})`,
-        triage: sql<boolean>`app_reviews_program(${programs.id})`,
-        manage: sql<boolean>`app_manages_program(${programs.id})`,
-      })
-      .from(programs)
-      .where(sql`app_can_view_program(${programs.id})`)
-      .orderBy(asc(programs.name), asc(programs.id))
-      .limit(50);
-    const activity = await tx
-      .select({
-        id: integrationAudit.id,
-        requestId: integrationAudit.requestId,
-        actorType: integrationAudit.actorType,
-        operation: integrationAudit.operation,
-        clientId: integrationAudit.clientId,
-        outcome: integrationAudit.outcome,
-        createdAt: integrationAudit.createdAt,
-      })
-      .from(integrationAudit)
-      .orderBy(desc(integrationAudit.createdAt))
-      .limit(25);
-    return { user, permissions, activity };
-  });
+  const { user, permissions, activity, keys } = await withActor(
+    actor,
+    async (tx) => {
+      const [user] = await tx
+        .select({ name: users.name, platformRole: users.platformRole })
+        .from(users)
+        .where(eq(users.id, actor));
+      const permissions = await tx
+        .select({
+          id: programs.id,
+          name: programs.name,
+          view: sql<boolean>`app_can_view_program(${programs.id})`,
+          submit: sql<boolean>`app_can_submit(${programs.id})`,
+          triage: sql<boolean>`app_reviews_program(${programs.id})`,
+          manage: sql<boolean>`app_manages_program(${programs.id})`,
+        })
+        .from(programs)
+        .where(sql`app_can_view_program(${programs.id})`)
+        .orderBy(asc(programs.name), asc(programs.id))
+        .limit(50);
+      const activity = await tx
+        .select({
+          id: integrationAudit.id,
+          requestId: integrationAudit.requestId,
+          actorType: integrationAudit.actorType,
+          operation: integrationAudit.operation,
+          clientId: integrationAudit.clientId,
+          outcome: integrationAudit.outcome,
+          createdAt: integrationAudit.createdAt,
+        })
+        .from(integrationAudit)
+        .orderBy(desc(integrationAudit.createdAt))
+        .limit(25);
+      const { rows: keys } = await tx.execute<{
+        id: string;
+        name: string;
+        expires_at: Date;
+      }>(sql`
+      select id, name, expires_at from personal_api_keys where user_id = app_actor() order by expires_at desc
+    `);
+      return { user, permissions, activity, keys };
+    },
+  );
 
   const audience = process.env.INTEGRATION_AUDIENCE;
   const scope = process.env.INTEGRATION_SCOPE || "bountydeck.api";
@@ -58,6 +71,32 @@ export default async function Integrations() {
       <h1 className="text-3xl font-semibold tracking-tight">
         {t("Integrations")}
       </h1>
+      <section className={`${panel} space-y-3`}>
+        <h2 className="font-semibold">{t("Personal API keys")}</h2>
+        <p className="text-sm text-muted">
+          {t(
+            "Use the key as a Bearer token for REST and MCP. It uses your current permissions and expires after 90 days.",
+          )}
+        </p>
+        <KeyForm
+          name={t("Key name")}
+          create={t("Create key")}
+          copy={t("Copy this key now. It is shown only once.")}
+        />
+        {keys.map((key) => (
+          <form
+            action={revokeKey}
+            key={key.id}
+            className="flex flex-wrap items-center justify-between gap-2"
+          >
+            <input type="hidden" name="id" value={key.id} />
+            <span>
+              {key.name} · {dateTime(key.expires_at)}
+            </span>
+            <Button variant="outline">{t("Revoke key")}</Button>
+          </form>
+        ))}
+      </section>
       <section className={panel}>
         <h2 className="font-semibold">{t("Connect a client")}</h2>
         {audience ? (

@@ -1,3 +1,4 @@
+import { personalKeyDigest } from "./personal-keys";
 import { readFileSync } from "node:fs";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -219,6 +220,21 @@ export async function authenticateIntegration(
   if (!authorization || authorization.length > 16384) throw invalidToken();
   const match = /^Bearer ([A-Za-z0-9._~+/-]+=*)$/i.exec(authorization);
   if (!match) throw invalidToken();
+  if (match[1].startsWith("bdk_")) {
+    if (!/^bdk_[A-Za-z0-9_-]{43}$/.test(match[1])) throw invalidToken();
+    const {
+      rows: [key],
+    } = await db.execute<{ actor_id: string; key_id: string }>(
+      sql`select * from app_personal_key(${personalKeyDigest(match[1])})`,
+    );
+    if (!key) throw invalidToken();
+    return {
+      actorId: key.actor_id,
+      subject: key.actor_id,
+      clientId: `key:${key.key_id}`,
+      actorType: "delegated",
+    };
+  }
   const config = integrationConfig();
   let response: unknown;
   try {
