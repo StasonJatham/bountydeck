@@ -84,8 +84,8 @@ export function PortalShell({
   const [collapsed, setCollapsed] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const drawer = useRef<HTMLDialogElement>(null);
-  const menu = useRef<HTMLDetailsElement>(null);
-  const account = useRef<HTMLElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const account = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   const search = useSearchParams();
   const router = useRouter();
@@ -128,11 +128,11 @@ export function PortalShell({
     function closeOnOutsidePointer(event: PointerEvent) {
       const details = menu.current;
       if (
-        details?.open &&
+        details &&
         event.target instanceof Node &&
         !details.contains(event.target)
       )
-        details.open = false;
+        setAccountOpen(false);
     }
     document.addEventListener("pointerdown", closeOnOutsidePointer);
     return () =>
@@ -307,30 +307,23 @@ export function PortalShell({
                 />
               )}
             </Link>
-            <details
+            <div
               className="account-menu relative"
               ref={menu}
-              onToggle={(event) => setAccountOpen(event.currentTarget.open)}
               onKeyDown={(event) => {
-                if (event.key === "Escape" && menu.current?.open) {
-                  menu.current.open = false;
+                if (event.key === "Escape" && accountOpen) {
+                  setAccountOpen(false);
                   account.current?.focus();
                 }
               }}
-              onBlur={(event) => {
-                if (
-                  event.relatedTarget &&
-                  !event.currentTarget.contains(event.relatedTarget)
-                )
-                  event.currentTarget.open = false;
-              }}
             >
-              <summary
+              <button
                 ref={account}
-                role="button"
+                type="button"
                 aria-expanded={accountOpen}
                 aria-label={labels.account}
-                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-1 hover:bg-subtle"
+                onClick={() => setAccountOpen(!accountOpen)}
+                className="flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-1 hover:bg-subtle aria-expanded:bg-subtle"
               >
                 <span
                   aria-hidden
@@ -343,34 +336,32 @@ export function PortalShell({
                   className="hidden text-muted sm:block"
                   aria-hidden
                 />
-              </summary>
-              <div className="absolute top-full right-0 mt-2 grid w-48 gap-1 rounded-lg border border-line bg-surface p-1.5 text-sm shadow-md">
-                {user && (
-                  <p className="truncate border-b border-line px-2 py-1.5 text-xs text-muted">
-                    {user}
-                  </p>
-                )}
-                <Link
-                  href="/profile"
-                  className="rounded-md px-2 py-1.5 hover:bg-subtle"
-                  onNavigate={() => {
-                    if (menu.current) menu.current.open = false;
-                  }}
-                >
-                  {labels.profile}
-                </Link>
-                <Link
-                  href="/settings"
-                  className="rounded-md px-2 py-1.5 hover:bg-subtle"
-                  onNavigate={() => {
-                    if (menu.current) menu.current.open = false;
-                  }}
-                >
-                  {labels.settings}
-                </Link>
-                {signOut}
-              </div>
-            </details>
+              </button>
+              {accountOpen && (
+                <div className="absolute top-full right-0 mt-2 grid w-48 gap-1 rounded-lg border border-line bg-surface p-1.5 text-sm shadow-md">
+                  {user && (
+                    <p className="truncate border-b border-line px-2 py-1.5 text-xs text-muted">
+                      {user}
+                    </p>
+                  )}
+                  <Link
+                    href="/profile"
+                    className="rounded-md px-2 py-1.5 hover:bg-subtle"
+                    onNavigate={() => setAccountOpen(false)}
+                  >
+                    {labels.profile}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="rounded-md px-2 py-1.5 hover:bg-subtle"
+                    onNavigate={() => setAccountOpen(false)}
+                  >
+                    {labels.settings}
+                  </Link>
+                  {signOut}
+                </div>
+              )}
+            </div>
           </div>
         </SiteHeader>
         <main

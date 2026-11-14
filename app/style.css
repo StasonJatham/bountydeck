@@ -94,12 +94,3 @@ button {
 .navigation-drawer::backdrop {
   background: rgb(12 13 22 / 55%);
 }
-.account-menu[open] summary {
-  background: var(--muted);
-}
-.account-menu summary {
-  list-style: none;
-}
-.account-menu summary::-webkit-details-marker {
-  display: none;
-}
