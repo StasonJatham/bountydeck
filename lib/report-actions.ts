@@ -33,7 +33,7 @@ async function runForm<T>(
 
 async function reportFields(data: FormData, path: string) {
   const { proofFile, ...fields } = Object.fromEntries(data);
-  if (!(proofFile instanceof File) || (!proofFile.name && !proofFile.size))
+  if (!(proofFile instanceof File) || !proofFile.size)
     return fields;
   const invalid = () =>
     redirect(`${path}?error=invalid-proof-file#submit-report`);
