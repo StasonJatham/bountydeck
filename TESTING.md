@@ -14,7 +14,7 @@ Run `npm run check:achievements` to validate the badge catalog, rule descriptors
 
 ## Real PostgreSQL
 
-Use a disposable migrated database. Set `RLS_TEST_DATABASE_URL` and `TEST_NOTIFICATION_ADMIN_URL` to a login that can create and remove fixtures and set the application and worker roles. Set `TEST_NOTIFICATION_WORKER_URL` to the restricted worker login. The notification test starts its own SMTP receiver and competing worker processes. The full Vitest run also requires the Keycloak and application fixtures in [REST and MCP](#rest-and-mcp).
+Use a disposable migrated database for `RLS_TEST_DATABASE_URL`. For the notification worker test, use a separate disposable migrated database with an empty outbox and no running deployment worker. Set `TEST_NOTIFICATION_ADMIN_URL` to its fixture administrator connection and `TEST_NOTIFICATION_WORKER_URL` to its restricted worker connection. The test starts its own SMTP receiver and two competing workers against that outbox. The full Vitest run also requires the Keycloak and application fixtures in [REST and MCP](#rest-and-mcp).
 
 ## Browser and deployment
 

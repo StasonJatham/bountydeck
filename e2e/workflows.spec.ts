@@ -506,7 +506,7 @@ test("SMTP and signed HTTPS notifications retry and record attempts", async ({
   }
 });
 
-test("color theme follows the system and persists across sign-in and reload", async ({
+test("color theme follows the system and persists for signed-in accounts", async ({
   page,
 }, info) => {
   await page.emulateMedia({ colorScheme: "dark" });
@@ -561,6 +561,10 @@ test("color theme follows the system and persists across sign-in and reload", as
   const accountTheme = page
     .getByRole("main")
     .getByRole("switch", { name: "Dark mode" });
+  if ((await accountTheme.getAttribute("aria-checked")) === "false")
+    await accountTheme.click();
+  await expect(accountTheme).toBeChecked();
+  await page.reload();
   await expect(accountTheme).toBeChecked();
   await expect(page.getByRole("banner")).toHaveCSS(
     "background-color",
@@ -600,7 +604,15 @@ test("German and English persist, and only platform admins can open Administrati
   await page.locator("#username").fill("local-researcher");
   await page.locator("#password").fill(password());
   await page.locator("#kc-login").click();
-  await expect(page.getByRole("heading", { name: "Übersicht" })).toBeVisible();
+  // An account preference can already exist on a repeat run.
+  await page
+    .getByRole("navigation", { name: /^(Main navigation|Hauptnavigation)$/ })
+    .getByRole("link", { name: /^(Settings|Einstellungen)$/ })
+    .click();
+  await page
+    .getByRole("combobox", { name: /^(Language|Sprache)$/ })
+    .selectOption("de");
+  await expect(page.locator("html")).toHaveAttribute("lang", "de");
   const navigation = page.getByRole("navigation", { name: "Hauptnavigation" });
   await expect(
     navigation.getByRole("link", { name: "Verwaltung", exact: true }),
@@ -614,9 +626,15 @@ test("German and English persist, and only platform admins can open Administrati
   ).toBeVisible();
   await page.goto("/dashboard");
   await page.getByRole("button", { name: "Kontomenü" }).click();
+  await page
+    .locator(".account-menu")
+    .getByRole("link", { name: "Einstellungen" })
+    .click();
   await page.getByRole("combobox", { name: "Sprache" }).selectOption("en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Settings", exact: true }),
+  ).toBeVisible();
 
   const manager = await login(browser, baseURL, "local-manager");
   await expect(
@@ -643,6 +661,12 @@ test("German and English persist, and only platform admins can open Administrati
   await expect(
     admin.getByRole("button", { name: "Organisation erstellen" }),
   ).toBeVisible();
+  await admin
+    .getByRole("navigation", { name: "Hauptnavigation" })
+    .getByRole("link", { name: "Einstellungen" })
+    .click();
+  await admin.getByRole("combobox", { name: "Sprache" }).selectOption("en");
+  await expect(admin.locator("html")).toHaveAttribute("lang", "en");
   await Promise.all([manager.close(), admin.close()]);
 });
 

@@ -53,6 +53,10 @@ test("PostgreSQL isolates reports, evidence, notes, score writes, and notificati
 
   try {
     await client.query("BEGIN");
+    // Keep global rankings deterministic when the disposable database also has demo scores.
+    await client.query(
+      "UPDATE users SET leaderboard_visible = false WHERE leaderboard_visible",
+    );
     await client.query(
       "INSERT INTO users (id, name, leaderboard_visible) SELECT id, 'Researcher', id <> $2 FROM unnest($1::uuid[]) ids(id)",
       [[researcher, peer, outsider, triager, otherManager, admin], peer],
@@ -66,7 +70,7 @@ test("PostgreSQL isolates reports, evidence, notes, score writes, and notificati
       admin,
     ]);
     await client.query(
-      "INSERT INTO programs (id,org_id,name,slug,status,eligibility) VALUES ($1,$2,'Open','open','published','all'),($3,$4,'Private','private','published','invitation')",
+      "INSERT INTO programs (id,org_id,name,slug,status,eligibility) VALUES ($1,$2,'Open',$1::uuid::text,'published','all'),($3,$4,'Private',$3::uuid::text,'published','invitation')",
       [program, org, otherProgram, otherOrg],
     );
     await client.query(

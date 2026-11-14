@@ -124,8 +124,13 @@ export async function exerciseIntegrationHttp(
     expect((await api("/identity", "invalid-fixture-token")).status).toBe(401);
     expect((await api("/achievements", "")).status).toBe(401);
     expect((await api("/achievements/me", "")).status).toBe(401);
-    const unauthorizedMcp = await fetch(`${origin}/mcp`, { method: "POST" });
-    expect(unauthorizedMcp.status).toBe(401);
+    const anonymousTools = await rpc("", "tools/list", {});
+    expect(anonymousTools.result?.tools?.map(({ name }) => name)).toEqual([
+      "bountydeck_list_public_disclosures",
+    ]);
+    expect(
+      (await call("", "get_report", { reportId: report })).error?.code,
+    ).toBe(-32602);
     const discovery = await fetch(
       `${origin}/.well-known/oauth-protected-resource/mcp`,
     );

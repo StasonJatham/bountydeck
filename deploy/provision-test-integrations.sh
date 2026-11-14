@@ -13,8 +13,11 @@ if [[ ! -s secrets/test_integration_service_secret ]]; then
   openssl rand -hex 32 > secrets/test_integration_service_secret
 fi
 
+fixture_client_id=$(docker compose exec -T application printenv OIDC_CLIENT_ID)
+[[ -n "$fixture_client_id" ]]
+
 service_subject=$(
-  node --input-type=module <<'JS' | docker compose --profile keycloak exec -T keycloak bash -c '
+  INTEGRATION_FIXTURE_CLIENT_ID="$fixture_client_id" node --input-type=module <<'JS' | docker compose --profile keycloak exec -T keycloak bash -c '
     set -euo pipefail
     [[ "$KC_HOSTNAME" == "http://bountydeck.test/identity" ]]
     read -r scope_json
@@ -96,7 +99,7 @@ console.log(JSON.stringify(mapper));
 console.log(JSON.stringify({
   ...mapper,
   name: "BountyDeck introspection audience",
-  config: { "included.client.audience": "bountydeck", "id.token.claim": "false", "access.token.claim": "true", "introspection.token.claim": "true" },
+  config: { "included.client.audience": process.env.INTEGRATION_FIXTURE_CLIENT_ID, "id.token.claim": "false", "access.token.claim": "true", "introspection.token.claim": "true" },
 }));
 JS
 )
