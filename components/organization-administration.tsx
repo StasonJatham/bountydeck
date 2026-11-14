@@ -90,14 +90,7 @@ export async function OrganizationAdministration({
           {t("User management")}
         </Link>
       )}
-      {platform && (
-        <Link
-          href="/admin/disclosures"
-          className="mt-3 ml-4 inline-block text-accent underline"
-        >
-          {t("Public disclosures")}
-        </Link>
-      )}
+
       {platform && (
         <Link
           href="/admin/branding"

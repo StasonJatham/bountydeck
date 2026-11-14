@@ -1,3 +1,4 @@
+import { ReportDisclosure } from "../../../../components/report-disclosure";
 import { AdminDeleteRecord } from "../../../../components/admin-delete-record";
 import { AchievementReview } from "../../../../components/achievement-review";
 import { getManualAchievements } from "../../../../lib/manual-achievements";
@@ -36,7 +37,11 @@ export default async function Report({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; achievement?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    achievement?: string;
+    disclosureError?: string;
+  }>;
 }) {
   const { t, date, number, decimal } = await getI18n();
   const actor = await requireActor();
@@ -398,6 +403,20 @@ export default async function Report({
           </section>
         </div>
       </div>
+      {(manager || report.reporterId === actor) && (
+        <ReportDisclosure
+          id={id}
+          manager={manager}
+          closed={[
+            "resolved",
+            "informative",
+            "not_applicable",
+            "out_of_scope",
+            "duplicate",
+          ].includes(report.status)}
+          error={Boolean((await searchParams).disclosureError)}
+        />
+      )}
       <AdminDeleteRecord
         kind="report"
         id={id}

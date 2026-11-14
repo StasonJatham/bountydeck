@@ -169,6 +169,13 @@
       "when": 1794475372023,
       "tag": "0023_account_control",
       "breakpoints": false
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794475372024,
+      "tag": "0024_disclosure_workflow",
+      "breakpoints": false
     }
   ]
 }

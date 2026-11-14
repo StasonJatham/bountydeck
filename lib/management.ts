@@ -98,7 +98,11 @@ export async function updateProgram(id: string, data: FormData) {
       parsePoints(fields[key]),
     ]),
   );
-  const parsed = programInput.safeParse({ ...fields, ...points });
+  const parsed = programInput.safeParse({
+    ...fields,
+    ...points,
+    directoryPublic: data.has("directoryPublic"),
+  });
   if (!parsed.success) redirect(`/programs/${id}/manage?error=invalid`);
   await webOperation(
     () => performUpdateProgram(actor, id, parsed.data),

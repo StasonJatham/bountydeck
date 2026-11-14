@@ -105,6 +105,12 @@ export const programs = pgTable("programs", {
   slug: text("slug").notNull(),
   description: text("description").notNull().default(""),
   rules: text("rules").notNull().default(""),
+  directoryPublic: boolean("directory_public").notNull().default(false),
+  disclosureMode: text("disclosure_mode", {
+    enum: ["disabled", "members", "public"],
+  })
+    .notNull()
+    .default("disabled"),
   disclosurePolicy: text("disclosure_policy").notNull().default(""),
   status: text("status", { enum: ["draft", "published", "paused", "archived"] })
     .notNull()

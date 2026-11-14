@@ -26,6 +26,8 @@ const details = z.object({ name, slug, description });
 const programData = details.extend({
   rules: description,
   disclosurePolicy: description,
+  directoryPublic: z.boolean().optional(),
+  disclosureMode: z.enum(["disabled", "members", "public"]).optional(),
   status: z.enum(["draft", "published", "paused", "archived"]),
   eligibility: z.enum(["all", "organization", "invitation"]),
   low: z.number().int().min(0).max(99999),

@@ -148,6 +148,27 @@ export default async function Manage({
               </select>
             </Field>
           ))}
+          <label className="flex gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="directoryPublic"
+              defaultChecked={program.directoryPublic}
+            />
+            {t("Show program in public directory")}
+          </label>
+          <Field label={t("Report disclosure")}>
+            <select
+              name="disclosureMode"
+              className={input}
+              defaultValue={program.disclosureMode}
+            >
+              <option value="disabled">{t("Disabled")}</option>
+              <option value="members">{t("Program participants only")}</option>
+              <option value="public">
+                {t("Public with explicit approval")}
+              </option>
+            </select>
+          </Field>
           <fieldset className="grid grid-cols-2 gap-2">
             <legend className="mb-2 text-sm font-medium">
               {t("Points per validated finding")}

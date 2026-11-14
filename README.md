@@ -81,3 +81,10 @@ and `GET /api/v1/public/reports`, or use the MCP tool
 `bountydeck_list_public_disclosures`. Use the returned `nextCursor` for
 pagination. Platform administrators publish and withdraw reviewed summaries
 under **Administration → Public disclosures**.
+
+Program managers can list a published program publicly and set its report
+disclosure policy independently. Eligible closed reports support disclosure
+requests by the reporter or program manager. The manager reviews and approves
+a redacted publication, or denies the request. Public endpoints serve the
+approved publication. Program-only publications require a program participant
+account. Existing manually entered summaries require a new review and approval.
