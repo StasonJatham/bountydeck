@@ -71,3 +71,19 @@ For example, `{"https://flows.example.org":["192.0.2.10"]}` illustrates the
 format. Replace the example origin and address with your Node-RED receiver.
 Users enter the HTTPS URL including its flow path under **Notifications**.
 Keep receiver credentials and signing secrets out of the origin map.
+
+After publishing or preloading an image, run the release helper from a trusted
+deployment environment:
+
+```sh
+./deploy/kubernetes/release.py --context YOUR_CONTEXT REGISTRY/bountydeck@sha256:APP_DIGEST
+```
+
+Keep the initial `migrate` Job as the template. The helper uses a separate Job
+per image, waits for migrations, then updates the application and worker in
+order. A failed migration stops the release before either Deployment changes.
+Inspect its logs before retrying and remove only the failed per-image Job after
+correcting its failure. Re-running a successful release reuses its migration Job.
+A release pipeline can invoke the same command after building the image, with
+one deployment run at a time per namespace. No runner is installed by this
+repository.

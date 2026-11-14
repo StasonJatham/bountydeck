@@ -176,6 +176,13 @@
       "when": 1794475372024,
       "tag": "0024_disclosure_workflow",
       "breakpoints": false
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794475372025,
+      "tag": "0025_disclosure_membership",
+      "breakpoints": false
     }
   ]
 }

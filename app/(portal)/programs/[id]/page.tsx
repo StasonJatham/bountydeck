@@ -60,9 +60,18 @@ export default async function Program({
           eq(programMemberships.role, "researcher"),
         ),
       );
-    return { ...row, scope, offers, joined: Boolean(membership) };
+    const { rows: disclosures } = await tx.execute<{
+      id: string;
+      title: string;
+    }>(sql`
+      select id, title from public_disclosures
+      where program_id = ${id} and kind = 'report'
+      order by id limit 25
+    `);
+    return { ...row, scope, offers, disclosures, joined: Boolean(membership) };
   });
-  const { program, eligible, manages, scope, offers, joined } = result;
+  const { program, eligible, manages, scope, offers, disclosures, joined } =
+    result;
   const error = (await searchParams).error;
   const assets = scope.filter((asset) => asset.inScope);
   return (
@@ -162,6 +171,23 @@ export default async function Program({
             <p className="mt-2 text-sm">{t("No assets defined.")}</p>
           )}
         </section>
+        {disclosures.length > 0 && (
+          <section className={panel}>
+            <h2 className="font-semibold">{t("Disclosed reports")}</h2>
+            <ul className="mt-3 space-y-2">
+              {disclosures.map(({ id, title }) => (
+                <li key={id}>
+                  <Link
+                    className="wrap-anywhere text-accent underline"
+                    href={`/disclosures/${id}`}
+                  >
+                    {title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <section className={panel}>
           <h2 className="font-semibold">{t("Testing rules")}</h2>
           <div className="markdown mt-2 max-h-96 overflow-auto wrap-anywhere">

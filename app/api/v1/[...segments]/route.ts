@@ -1,4 +1,7 @@
-import { publicDisclosures } from "../../../../lib/integrations/public-disclosures";
+import {
+  publicDisclosures,
+  readDisclosure,
+} from "../../../../lib/integrations/public-disclosures";
 import { loggedRoute } from "../../../../lib/telemetry/http";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -42,6 +45,17 @@ async function handle(
     }
     const principal = await authenticateIntegration(request);
     await consumeRate(principal);
+    if (
+      request.method === "GET" &&
+      segments.length === 2 &&
+      segments[0] === "disclosures"
+    ) {
+      const id = z.uuid().safeParse(segments[1]);
+      if (!id.success) throw new IntegrationError(404, "not_found");
+      const entry = await readDisclosure(id.data, principal.actorId);
+      if (!entry) throw new IntegrationError(404, "not_found");
+      return jsonResult(entry, 200, requestId);
+    }
     for (const operation of operations) {
       if (operation.method !== request.method) continue;
       const template = operation.path.slice(1).split("/");

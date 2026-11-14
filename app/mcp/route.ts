@@ -1,4 +1,7 @@
-import { publicDisclosures } from "../../lib/integrations/public-disclosures";
+import {
+  publicDisclosures,
+  readDisclosure,
+} from "../../lib/integrations/public-disclosures";
 import { z as publicSchema } from "zod";
 import { loggedRoute } from "../../lib/telemetry/http";
 import {
@@ -60,6 +63,23 @@ async function handle(request: Request) {
       }),
     );
     if (principal) {
+      server.registerTool(
+        "bountydeck_get_disclosure",
+        {
+          description: "Read an approved disclosure visible to this account.",
+          inputSchema: { id: publicSchema.uuid() },
+          annotations: { readOnlyHint: true },
+        },
+        async ({ id }) => {
+          const entry = await readDisclosure(id, principal.actorId);
+          return entry
+            ? { content: [{ type: "text", text: JSON.stringify(entry) }] }
+            : {
+                isError: true,
+                content: [{ type: "text", text: "Disclosure not found." }],
+              };
+        },
+      );
       for (const operation of operations) {
         server.registerTool(
           operation.name,

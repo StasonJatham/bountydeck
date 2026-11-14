@@ -30,7 +30,7 @@ async function save(data: FormData) {
   const subscriptions = Object.keys(events).filter((event) =>
     data.getAll("events").includes(event),
   );
-  if (!enabled) {
+  if (!enabled && !destination && !secret) {
     await withActor(actor, (tx) =>
       tx.execute(
         sql`update notification_channels set enabled = false where owner_id = ${actor}`,
@@ -38,37 +38,41 @@ async function save(data: FormData) {
     );
     redirect(path + "?saved=1");
   }
-  try {
-    if (
-      destination.length > 2048 ||
-      (secret && (secret.length < 32 || secret.length > 256))
-    )
-      throw new Error();
-    approvedWebhook(
-      destination,
-      parseWebhookDestinations(process.env.WEBHOOK_DESTINATIONS),
-    );
-  } catch {
+  if (
+    destination.length > 2048 ||
+    (secret && (secret.length < 32 || secret.length > 256))
+  )
     redirect(path + "?error=1");
-  }
   const saved = await withActor(actor, async (tx) => {
     const {
       rows: [existing],
     } = await tx.execute<{ id: string; destination: string }>(sql`
       select id, destination from notification_channels where owner_id = ${actor} for update
     `);
-    if ((!existing || existing.destination !== destination) && !secret)
-      return false;
+    const changingDestination = existing?.destination !== destination;
+    if (changingDestination && !secret) return false;
+    if (enabled || changingDestination) {
+      try {
+        approvedWebhook(
+          destination,
+          parseWebhookDestinations(process.env.WEBHOOK_DESTINATIONS),
+        );
+      } catch {
+        return false;
+      }
+    }
     const selected = sql`ARRAY[${sql.join(
       subscriptions.map((event) => sql`${event}`),
       sql`, `,
     )}]::text[]`;
     if (existing) {
-      await tx.execute(sql`update notification_channels set enabled = true, destination = ${destination},
+      await tx.execute(sql`update notification_channels set enabled = ${enabled}, destination = ${destination},
         signing_secret = coalesce(${secret || null}, signing_secret), subscribed_events = ${selected} where id = ${existing.id}`);
     } else {
-      await tx.execute(sql`insert into notification_channels (owner_id, kind, destination, signing_secret, subscribed_events)
-        values (${actor}, 'webhook', ${destination}, ${secret}, ${selected}) on conflict (owner_id) do nothing`);
+      const result =
+        await tx.execute(sql`insert into notification_channels (owner_id, kind, destination, signing_secret, subscribed_events, enabled)
+        values (${actor}, 'webhook', ${destination}, ${secret}, ${selected}, ${enabled}) on conflict (owner_id) do nothing`);
+      return result.rowCount === 1;
     }
     return true;
   });

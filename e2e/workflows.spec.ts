@@ -378,6 +378,40 @@ test("organization and program administration enforce role boundaries", async ({
   await Promise.all([admin.close(), manager.close(), outsider.close()]);
 });
 
+test("personal webhook preferences can be saved while disabled", async ({
+  browser,
+  baseURL,
+}) => {
+  const researcher = await login(browser, baseURL, "local-researcher");
+  try {
+    await researcher.goto("/notifications");
+    const endpoint = "https://notify-fixture.bountydeck.test:8443/report";
+    const enable = researcher.getByRole("switch", { name: "Enable webhook" });
+    const event = researcher.getByRole("switch", { name: "My report updated" });
+    if ((await enable.getAttribute("aria-checked")) === "true")
+      await enable.click();
+    if ((await event.getAttribute("aria-checked")) !== "true")
+      await event.click();
+    await researcher.getByLabel("Destination URL").fill(endpoint);
+    await researcher
+      .getByLabel("Signing secret")
+      .fill(readFileSync("secrets/notification_test_hmac", "utf8").trim());
+    await researcher.getByRole("button", { name: "Save settings" }).click();
+    await expect(researcher.getByRole("status")).toHaveText(
+      "Webhook preferences saved.",
+    );
+    await researcher.reload();
+    await expect(researcher.getByLabel("Destination URL")).toHaveValue(
+      endpoint,
+    );
+    await expect(event).toHaveAttribute("aria-checked", "true");
+    await expect(enable).toHaveAttribute("aria-checked", "false");
+    await expect(researcher.getByLabel("Signing secret")).toHaveValue("");
+  } finally {
+    await researcher.close();
+  }
+});
+
 test("SMTP and signed HTTPS notifications retry and record attempts", async ({
   browser,
   baseURL,
