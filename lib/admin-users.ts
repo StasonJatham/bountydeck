@@ -65,7 +65,7 @@ export async function listManagedIdentities(first: number) {
   try {
     const realm = await keycloakAdmin();
     const identities = await realm.list(first);
-    const protectedSubjects = await withActor(await requireActor(), (tx) =>
+    const protectedSubjects = await withActor(actor, (tx) =>
       tx
         .select({ subject: accounts.providerAccountId })
         .from(accounts)
