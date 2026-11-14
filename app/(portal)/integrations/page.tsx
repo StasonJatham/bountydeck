@@ -91,7 +91,7 @@ export default async function Integrations() {
           >
             <input type="hidden" name="id" value={key.id} />
             <span>
-              {key.name} · {dateTime(key.expires_at)}
+              {key.name} · {dateTime(new Date(key.expires_at))}
             </span>
             <Button variant="outline">{t("Revoke key")}</Button>
           </form>
