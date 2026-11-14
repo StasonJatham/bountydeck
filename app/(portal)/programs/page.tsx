@@ -122,7 +122,7 @@ export default async function Programs({
       </form>
       <div
         id="program-list"
-        className="mt-6 grid scroll-mt-20 gap-4 md:grid-cols-2"
+        className="mt-6 grid grid-cols-1 scroll-mt-20 gap-4 md:grid-cols-2"
       >
         {rows.map(({ program, organization, eligible, scopeCount }) => (
           <Link
@@ -131,7 +131,7 @@ export default async function Programs({
             href={`/programs/${program.id}${filters.eligible === "1" ? "#submit-report" : ""}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+              <span className="inline-flex items-center gap-1.5 min-w-0 wrap-anywhere text-xs text-muted">
                 <Building2 size={14} aria-hidden />
                 {organization}
               </span>
@@ -139,15 +139,15 @@ export default async function Programs({
                 {t(program.status)}
               </ReportBadge>
             </div>
-            <h2 className="mt-3 flex items-center justify-between gap-3 break-words text-lg font-semibold">
-              <span className="min-w-0">{program.name}</span>
+            <h2 className="mt-3 flex items-center justify-between gap-3 wrap-anywhere text-lg font-semibold">
+              <span className="min-w-0 wrap-anywhere">{program.name}</span>
               <ArrowUpRight
                 className="shrink-0 text-muted group-hover:text-accent"
                 size={16}
                 aria-hidden
               />
             </h2>
-            <p className="mt-1 line-clamp-3 text-sm text-secondary">
+            <p className="mt-1 line-clamp-3 wrap-anywhere text-sm text-secondary">
               {program.description}
             </p>
             {(scopeCount > 0 || eligible) && (

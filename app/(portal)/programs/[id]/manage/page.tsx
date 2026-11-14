@@ -79,7 +79,7 @@ export default async function Manage({
           {t("Check the details and try again.")}
         </p>
       )}
-      <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <form
           className={`${panel} grid gap-3`}
           action={updateProgram.bind(null, id)}

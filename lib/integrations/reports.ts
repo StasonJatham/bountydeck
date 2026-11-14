@@ -34,7 +34,7 @@ export const reportInput = z.object({
   description: text(12000),
   cwe: z.string().regex(/^CWE-[1-9][0-9]{0,4}$/),
   steps: text(12000),
-  proofOfConcept: text(12000),
+  proofOfConcept: text(512 * 1024),
   impact: text(12000),
   proposedSeverity: z.enum(severities),
 });

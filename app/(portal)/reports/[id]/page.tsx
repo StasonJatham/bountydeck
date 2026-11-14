@@ -182,11 +182,24 @@ export default async function Report({
             ].map(([label, value]) => (
               <div key={label} className="mb-5 last:mb-0">
                 <h2 className="mb-2 font-semibold">{t(label)}</h2>
-                <div className="markdown whitespace-pre-wrap break-words text-sm">
-                  <Markdown disallowedElements={["img", "a"]} unwrapDisallowed>
+                {label === "Proof of concept" ? (
+                  <pre
+                    tabIndex={0}
+                    aria-label={t(label)}
+                    className="max-h-96 overflow-auto whitespace-pre-wrap wrap-anywhere text-sm"
+                  >
                     {value}
-                  </Markdown>
-                </div>
+                  </pre>
+                ) : (
+                  <div className="markdown whitespace-pre-wrap wrap-anywhere text-sm">
+                    <Markdown
+                      disallowedElements={["img", "a"]}
+                      unwrapDisallowed
+                    >
+                      {value}
+                    </Markdown>
+                  </div>
+                )}
               </div>
             ))}
           </section>

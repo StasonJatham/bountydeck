@@ -31,11 +31,37 @@ async function runForm<T>(
   }
 }
 
+async function reportFields(data: FormData, path: string) {
+  const { proofFile, ...fields } = Object.fromEntries(data);
+  if (!(proofFile instanceof File) || (!proofFile.name && !proofFile.size))
+    return fields;
+  const invalid = () =>
+    redirect(`${path}?error=invalid-proof-file#submit-report`);
+  if (!/\.txt$/i.test(proofFile.name) || proofFile.size > 512 * 1024) invalid();
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(
+      await proofFile.arrayBuffer(),
+    );
+  } catch {
+    return invalid();
+  }
+  if (!text.trim() || text.includes("\0")) invalid();
+  return { ...fields, proofOfConcept: text };
+}
+
 export async function submitReport(programId: string, data: FormData) {
   const actor = await requireActor();
   if (!z.uuid().safeParse(programId).success) notFound();
-  const { id } = await runForm(`/programs/${programId}`, "invalid-report", () =>
-    createReport(actor, programId, Object.fromEntries(data)),
+  const { id } = await runForm(
+    `/programs/${programId}`,
+    "invalid-report",
+    async () =>
+      createReport(
+        actor,
+        programId,
+        await reportFields(data, `/programs/${programId}`),
+      ),
   );
   redirect(`/reports/${id}`);
 }
@@ -43,8 +69,12 @@ export async function submitReport(programId: string, data: FormData) {
 export async function submitGuestReport(programId: string, data: FormData) {
   if (!guestReportsEnabled() || !z.uuid().safeParse(programId).success)
     notFound();
-  await runForm(`/guest-report/${programId}`, "invalid-report", () =>
-    createReport(guestReporterId, programId, Object.fromEntries(data)),
+  await runForm(`/guest-report/${programId}`, "invalid-report", async () =>
+    createReport(
+      guestReporterId,
+      programId,
+      await reportFields(data, `/guest-report/${programId}`),
+    ),
   );
   redirect("/guest-report?submitted=1");
 }

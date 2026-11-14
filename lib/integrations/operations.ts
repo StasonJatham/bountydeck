@@ -304,7 +304,7 @@ export const operations = [
     permission: "Eligible researcher",
     input: reports.reportInput.merge(programId),
     status: 201,
-    maxBytes: 384 * 1024,
+    maxBytes: 4 * 1024 * 1024,
     run: (actor, { programId, ...data }) =>
       reports.createReport(actor, programId, data),
   }),

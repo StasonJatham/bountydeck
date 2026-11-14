@@ -66,8 +66,8 @@ export default async function Program({
   const error = (await searchParams).error;
   const assets = scope.filter((asset) => asset.inScope);
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-2">
-      <div className="grid content-start gap-4">
+    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 content-start gap-4">
         {manages && (
           <Link
             className="w-fit text-sm font-medium"
@@ -81,7 +81,7 @@ export default async function Program({
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             {program.name}
           </h1>
-          <p className="mt-3 whitespace-pre-wrap text-secondary">
+          <p className="mt-3 whitespace-pre-wrap wrap-anywhere text-secondary">
             {program.description}
           </p>
         </div>
@@ -139,7 +139,7 @@ export default async function Program({
             {scope.map((asset) => (
               <li key={asset.id}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <strong className="break-words">{asset.name}</strong>
+                  <strong className="wrap-anywhere">{asset.name}</strong>
                   <ReportBadge status={asset.inScope ? "published" : undefined}>
                     {asset.inScope ? t("In scope") : t("Out of scope")}
                   </ReportBadge>

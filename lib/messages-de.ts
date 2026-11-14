@@ -401,6 +401,11 @@ export const german: Record<string, string> = {
     "Es wurden noch keine Testregeln veröffentlicht.",
   "No disclosure policy has been published.":
     "Es wurde noch keine Offenlegungsrichtlinie veröffentlicht.",
+  "Proof of concept TXT file": "Proof of Concept als TXT-Datei",
+  "A UTF-8 TXT file up to 512 KiB replaces the text above.":
+    "Eine UTF-8-TXT-Datei bis 512 KiB ersetzt den Text oben.",
+  "Choose a non-empty UTF-8 TXT file up to 512 KiB.":
+    "Wähle eine nicht leere UTF-8-TXT-Datei bis 512 KiB.",
   Preferences: "Präferenzen",
   "Dark mode": "Dunkel",
   "Internal vulnerability reporting":

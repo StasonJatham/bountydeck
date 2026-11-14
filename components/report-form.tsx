@@ -18,14 +18,16 @@ export async function ReportForm({
       id="submit-report"
       tabIndex={-1}
       action={action}
-      className={`${panel} grid scroll-mt-20 content-start gap-4 [&_textarea[name=proofOfConcept]]:font-mono [&_textarea[name=steps]]:font-mono`}
+      className={`${panel} grid min-w-0 grid-cols-1 scroll-mt-20 content-start gap-4 [&_textarea[name=proofOfConcept]]:font-mono [&_textarea[name=steps]]:font-mono`}
     >
       <h2 className="text-xl font-semibold">{t("Submit a report")}</h2>
       {error && (
         <p role="alert" className="text-sm text-danger">
           {error === "rate-limit"
             ? t("Submission limit reached. Try again later.")
-            : t("Check the report fields and try again.")}
+            : error === "invalid-proof-file"
+              ? t("Choose a non-empty UTF-8 TXT file up to 512 KiB.")
+              : t("Check the report fields and try again.")}
         </p>
       )}
       <Text name="title" label={t("Title")} />
@@ -60,7 +62,19 @@ export async function ReportForm({
         label={t("Proof of concept")}
         multiline
         max={12000}
+        required={false}
       />
+      <Field label={t("Proof of concept TXT file")}>
+        <input
+          name="proofFile"
+          type="file"
+          accept=".txt"
+          className="block w-full min-w-0 text-sm"
+        />
+      </Field>
+      <p className="text-sm text-muted">
+        {t("A UTF-8 TXT file up to 512 KiB replaces the text above.")}
+      </p>
       <Text name="impact" label={t("Impact")} multiline max={12000} />
       <Button>{t("Submit report")}</Button>
     </form>
